@@ -1,8 +1,18 @@
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/johnfacey/drowjs)
 
-# Drow
+# Drow.js 🎭
 
-Simple Web Component Library for creating custom HTML Components.
+**The Tiny, Object-Based Web Component Library.**
+
+Drow is a minimalist wrapper for the Web Components API. It replaces the boilerplate of JavaScript Classes with a clean, object-based configuration. Define your components as simple objects and let Drow handle the registration and rendering.
+
+## Why Drow?
+
+- 🚫 **Zero Dependencies**: No NPM, no build steps, no headaches.
+- 📉 **Microscopic Size**: Under 1kb gzipped.
+- 🧩 **Object-First API**: No more `class X extends HTMLElement` or `super()`.
+- ⚡ **Native Performance**: Uses the browser's built-in Custom Elements registry.
+
 <div style="clear:both;padding-bottom:10px">
 <p>
 <img src="res/Drow-Setup.png"
@@ -28,14 +38,15 @@ import Drow from 'drow';
 
 ## Define a Drow Component
 
-Define a Drow Object to setup a componet:
+Define a Drow Object to setup a component. This "JSON-like" definition makes it easy to build components without dealing with complex class syntax.
 
 Component needs to have a <br />
 - **name** : name of HTML Custom Component <br />
 - **props** : properties set on the Custom Component <br />
+- **state** : reactive state object <br />
 - **template** : standard html template <br />
-- **init** : function() - optional<br />
-- **watch** : function(obj) - optional<br />
+- **methods** : functions for event handling <br />
+- **css** : component-scoped CSS <br />
 - **templating** : You can now use handlebars/mustache style variables in templates there are applied by prop name 
     Ex: {{prop1}}
 
@@ -48,6 +59,7 @@ JavaScript
 var config = {
     "name" : "my-comp",
     "props": ['prop1','prop2'],
+    "css": "b { color: blue; }",
     "template": `<div>
                   <div>Every time you click on timestamp it will update the time.</div>
             <b>Click for the timestamp</b><div>{{prop1}}</div>
@@ -67,7 +79,7 @@ var config = {
     }
 }
 
-DrowJS.register(config);
+Drow.register(config);
 
 ```
 
@@ -98,7 +110,7 @@ var myComp = {
     }
 }
 //Register Component
-DrowJS.register(myComp); //using the config created earlier
+Drow.register(myComp); //using the config created earlier
 ```
 
 ## Examples
@@ -106,6 +118,12 @@ DrowJS.register(myComp); //using the config created earlier
 Basic Example:
 
  [Example 1](src/index.html)
+
+## Documentation
+
+See the docs for usage and examples:
+
+- docs/README.md
 
 
 
@@ -127,4 +145,3 @@ npm run server
 Author [johnfacey.dev](https://johnfacey.dev/)
 
 Twitter [twitter.com/johnfacey](https://twitter.com/johnfacey)
-

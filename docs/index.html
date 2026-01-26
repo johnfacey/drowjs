@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Drow — Documentation</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:24px;color:#111}
+    header{margin-bottom:18px}
+    nav a{margin-right:12px}
+    pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow:auto}
+    .example{margin:18px 0;padding:12px;border:1px solid #eee;border-radius:6px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Drow — Documentation</h1>
+    <p>Lightweight component library — usage and examples.</p>
+    <nav>
+      <a href="USAGE.md">Usage</a>
+      <a href="EXAMPLES.md">Examples</a>
+      <a href="/">Repository</a>
+    </nav>
+  </header>
+
+  <section>
+    <h2>Quick Start</h2>
+    <div class="example">
+      <p>Include the script and register a component:</p>
+      <pre><code>&lt;script src="/drow.js"&gt;&lt;/script&gt;
+
+var config = { name: 'my-counter', state: {count:0}, template: `<button @click="increment">Count is {{count}}</button>`, methods:{ increment(){ this.state.count++ } } }
+Drow.register(config);
+      </code></pre>
+    </div>
+  </section>
+
+  <footer>
+    <p>Files: <a href="USAGE.md">USAGE.md</a> — <a href="EXAMPLES.md">EXAMPLES.md</a></p>
+  </footer>
+</body>
+</html>
