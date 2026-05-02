@@ -1,49 +1,666 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>DrowJS Sample</title>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drow.js - Tiny Object-Based Web Component Library</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --dark-bg: #0a0e27;
+            --darker-bg: #050709;
+            --card-bg: #0f1436;
+            --accent-purple: #a78bfa;
+            --accent-cyan: #06b6d4;
+            --accent-gold: #fbbf24;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: #1e293b;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #0d1135 100%);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Background animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(167, 139, 250, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header & Navigation */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-emoji {
+            font-size: 32px;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-left: 30px;
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            color: var(--accent-purple);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 100px 0;
+            text-align: center;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .hero h1 {
+            font-size: 64px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+            line-height: 1.1;
+        }
+
+        .hero .subtitle {
+            font-size: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 60px;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            color: white;
+            box-shadow: 0 4px 15px rgba(167, 139, 250, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(167, 139, 250, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent-purple);
+            border: 2px solid var(--accent-purple);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(167, 139, 250, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Feature Grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 80px 0;
+            padding: 60px 0;
+        }
+
+        .feature-card {
+            background: rgba(15, 20, 54, 0.5);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(167, 139, 250, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: var(--accent-purple);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Code Example */
+        .code-section {
+            margin: 100px 0;
+            padding: 60px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-section h2 {
+            font-size: 40px;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .code-example {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .code-block {
+            background: rgba(5, 7, 9, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .code-block code {
+            color: var(--text-primary);
+        }
+
+        .keyword { color: var(--accent-purple); }
+        .string { color: var(--accent-cyan); }
+        .number { color: var(--accent-gold); }
+
+        .code-description {
+            padding: 20px;
+        }
+
+        .code-description h3 {
+            color: var(--accent-gold);
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .code-description p {
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        /* Interactive Demo */
+        .demo-section {
+            margin: 100px 0;
+            padding: 60px 0;
+        }
+
+        .demo-section h2 {
+            font-size: 40px;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .demo-container {
+            background: rgba(15, 20, 54, 0.5);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .demo-box {
+            background: rgba(5, 7, 9, 0.5);
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .demo-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .demo-button {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .demo-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+        }
+
+        .timestamp {
+            color: var(--accent-gold);
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* Comparison */
+        .comparison {
+            margin: 100px 0;
+            padding: 60px 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .comparison h2 {
+            font-size: 40px;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .comparison-box {
+            background: rgba(15, 20, 54, 0.5);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .comparison-box h3 {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .drow-box h3 {
+            color: var(--accent-purple);
+        }
+
+        .comparison-box ul {
+            list-style: none;
+        }
+
+        .comparison-box li {
+            padding: 10px 0;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 10px;
+        }
+
+        .comparison-box li::before {
+            color: var(--accent-gold);
+            font-weight: bold;
+        }
+
+        .drow-box li::before {
+            content: '✓';
+        }
+
+        .other-box li::before {
+            content: '◊';
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 60px 0 40px;
+            margin-top: 100px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto auto;
+            gap: 40px;
+            align-items: start;
+            margin-bottom: 40px;
+        }
+
+        .footer-about p {
+            color: var(--text-secondary);
+            max-width: 300px;
+        }
+
+        .footer-link {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .footer-link a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 10px;
+            transition: color 0.3s ease;
+            font-size: 14px;
+        }
+
+        .footer-link a:hover {
+            color: var(--accent-purple);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 12px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 42px;
+            }
+
+            .hero .subtitle {
+                font-size: 18px;
+            }
+
+            .code-example {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            nav {
+                display: none;
+            }
+
+            .feature-card:nth-child(n+4) {
+                display: none;
+            }
+
+            .feature-card:nth-child(1),
+            .feature-card:nth-child(2),
+            .feature-card:nth-child(3) {
+                animation-delay: calc(var(--index) * 0.1s);
+            }
+        }
+    </style>
 </head>
-
 <body>
-    <div id="app"></div>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <span class="logo-emoji">🎭</span>
+                Drow
+            </div>
+            <nav>
+                <a href="#features">Features</a>
+                <a href="#demo">Demo</a>
+                <a href="#vs">Why Drow?</a>
+                <a href="#footer">Docs</a>
+            </nav>
+        </header>
 
-    <!-- Custom HTML Component -->
-    <comp-click-test message="Hello Universe"></comp-click-test>
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>The Tiny, Object-Based Web Component Library</h1>
+            <p class="subtitle">Zero dependencies. Under 1kb. No boilerplate. Just pure, native web components.</p>
+            <div class="cta-buttons">
+                <a href="https://www.npmjs.com/package/drow" class="btn btn-primary">Install from npm</a>
+                <a href="https://github.com/johnfacey/drow" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </section>
 
-    <hr />
+        <!-- Features -->
+        <section class="features" id="features">
+            <div class="feature-card">
+                <div class="feature-icon">🚫</div>
+                <h3>Zero Dependencies</h3>
+                <p>No npm, no build steps, no headaches. Just include the script and start building.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📉</div>
+                <h3>Microscopic Size</h3>
+                <p>Under 1kb gzipped. Your users won't even notice it's loaded.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧩</div>
+                <h3>Object-First API</h3>
+                <p>No classes, no super(). Define components as simple objects. That's it.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Native Performance</h3>
+                <p>Uses the browser's built-in Custom Elements registry. Pure speed.</p>
+            </div>
+        </section>
 
-    <comp-watch-test message="Hello UniverseX"></comp-watch-test>
+        <!-- Code Example -->
+        <section class="code-section">
+            <h2>How Simple Is It?</h2>
+            <div class="code-example">
+                <div>
+                    <div class="code-block"><code><span class="keyword">var</span> config = {
+  <span class="string">"name"</span>: <span class="string">"my-comp"</span>,
+  <span class="string">"props"</span>: [<span class="string">'title'</span>, <span class="string">'link'</span>],
+  <span class="string">"template"</span>: <span class="string">`&lt;div&gt;
+    &lt;h2&gt;{{title}}&lt;/h2&gt;
+    &lt;a href="{{link}}"&gt;Visit&lt;/a&gt;
+  &lt;/div&gt;`</span>,
+  <span class="string">"css"</span>: <span class="string">"h2 { color: #a78bfa; }"</span>,
+  <span class="string">"init"</span>: <span class="keyword">function</span>() {
+    <span class="comment">// Optional initialization</span>
+  }
+}
 
-    <hr />
+Drow.register(config);</code></div>
+                </div>
+                <div class="code-description">
+                    <h3>That's All You Need</h3>
+                    <p>✓ Define a name</p>
+                    <p>✓ List your props</p>
+                    <p>✓ Write a template</p>
+                    <p>✓ Add some CSS</p>
+                    <p>✓ Register with Drow</p>
+                    <p style="margin-top: 20px; color: var(--text-primary);">No inheritance. No lifecycle hooks to memorize. No framework complexity.</p>
+                </div>
+            </div>
+        </section>
 
-    <slot-test> 
-        <div slot="slot1">AAA</div>
-    </slot-test>
+        <!-- Interactive Demo -->
+        <section class="demo-section" id="demo">
+            <h2>Try It Live</h2>
+            <div class="demo-container">
+                <time-demo></time-demo>
+                <div style="color: var(--text-secondary); font-size: 14px; margin-top: 30px;">
+                    This component was created with just an object definition. No complex setup required.
+                </div>
+            </div>
+        </section>
 
-    <!-- Load DrowJS Library -->
-    <script src="drow.js"></script>
-
-    
-    <br />
-    <hr />
-    <div>
-        <ul>
-            <li>
-                Example 1: Inspect the DOM and change the message attribute.<br />
-                Click on the Bold Text to show the date.
-            </li>
-
-            <li>
-                Example 2:This shows the Component can react component changes within its watch method as well as have handlers
-                attached in the init.
-            </li>
-        </ul>
+        <!-- Comparison -->
+        <section class="comparison" id="vs">
+            <h2>Why Choose Drow?</h2>
+            <div class="comparison-grid">
+                <div class="comparison-box drow-box">
+                    <h3>Drow.js</h3>
+                    <ul>
+                        <li>Zero dependencies</li>
+                        <li>Simple object syntax</li>
+                        <li>Built-in templating</li>
+                        <li>Tiny bundle size</li>
+                        <li>No build step needed</li>
+                        <li>Native web standards</li>
+                        <li>Perfect for beginners</li>
+                        <li>Great for experienced devs</li>
+                    </ul>
+                </div>
+                <div class="comparison-box other-box">
+                    <h3>React, Vue, Angular...</h3>
+                    <ul>
+                        <li>Complex dependencies</li>
+                        <li>Class or JSX syntax</li>
+                        <li>Multiple abstraction layers</li>
+                        <li>Large bundle size</li>
+                        <li>Build pipeline required</li>
+                        <li>Custom lifecycle hooks</li>
+                        <li>Steep learning curve</li>
+                        <li>Overkill for components</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <!-- Run Sample Component Data -->
-    <script src="main.js"></script>
-</body>
+    <!-- Footer -->
+    <footer id="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-about">
+                    <h4 style="color: var(--accent-purple); margin-bottom: 15px;">Drow</h4>
+                    <p>A minimalist web component library for developers who value simplicity and control.</p>
+                </div>
+                <div class="footer-link">
+                    <strong style="color: var(--accent-purple);">Links</strong>
+                    <a href="https://github.com/johnfacey/drow">GitHub</a>
+                    <a href="https://www.npmjs.com/package/drow">NPM</a>
+                </div>
+                <div class="footer-link">
+                    <strong style="color: var(--accent-purple);">Community</strong>
+                    <a href="https://twitter.com/johnfacey">Twitter</a>
+                    <a href="https://johnfacey.dev">Author</a>
+                </div>
+                <div class="footer-link">
+                    <strong style="color: var(--accent-purple);">Docs</strong>
+                    <a href="https://github.com/johnfacey/drow#documentation">README</a>
+                    <a href="https://github.com/johnfacey/drow/tree/master/docs">Guides</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Drow.js. Built with simplicity in mind. Inspired by dark elves and clean code.</p>
+            </div>
+        </div>
+    </footer>
 
+    <!-- Load Drow.js Library -->
+    <script src="drow.js"></script>
+
+    <script>
+        // Register the Drow component for the interactive demo
+        Drow.register({
+            name: "time-demo",
+            state: { time: "Ready to click..." },
+            template: `
+                <div class="demo-box">
+                    <div class="demo-text">Click the button to see Drow in action</div>
+                    <button class="demo-button" @click="update">Get Current Time</button>
+                    <div class="timestamp" style="animation: fadeInUp 0.3s ease-out">{{time}}</div>
+                </div>
+            `,
+            methods: {
+                update() {
+                    this.state.time = new Date().toLocaleTimeString();
+                }
+            }
+        });
+    </script>
+</body>
 </html>

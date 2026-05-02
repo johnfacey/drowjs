@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>DrowJS Sample</title>
+    <meta charset="utf-8">
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <!-- Custom HTML Component -->
+    <comp-click-test message="Hello Universe"></comp-click-test>
+
+    <hr />
+
+    <comp-watch-test message="Hello UniverseX"></comp-watch-test>
+
+    <hr />
+
+    <slot-test> 
+        <div slot="slot1">AAA</div>
+    </slot-test>
+
+    <!-- Load DrowJS Library -->
+    <script src="drow.js"></script>
+
+    
+    <br />
+    <hr />
+    <div>
+        <ul>
+            <li>
+                Example 1: Inspect the DOM and change the message attribute.<br />
+                Click on the Bold Text to show the date.
+            </li>
+
+            <li>
+                Example 2:This shows the Component can react component changes within its watch method as well as have handlers
+                attached in the init.
+            </li>
+        </ul>
+    </div>
+
+    <!-- Run Sample Component Data -->
+    <script src="main.js"></script>
+</body>
+
+</html>
