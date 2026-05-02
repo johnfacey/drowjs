@@ -20,10 +20,12 @@
   "scripts": {
     "clean": "rm -rf dist/*",
     "doc": "jsdoc README.md drow.js",
-    "server": "http-server"
+    "server": "http-server",
+    "minify": "npx terser drow.js -o drow.min.js --compress --mangle"
   },
   "dependencies": {
     "http-server": "^14.1.0",
-    "jsdoc": "^3.6.4"
+    "jsdoc": "^3.6.4",
+    "terser": "^5.46.2"
   }
 }

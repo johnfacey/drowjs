@@ -44,105 +44,178 @@
 
     <section>
         <article><p><a href="https://gitpod.io/#https://github.com/johnfacey/drowjs"><img src="https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod" alt="Gitpod ready-to-code"></a></p>
-<h1>Drow</h1>
-<p>Simple Web Component Library for creating custom HTML Components.</p>
+<h1>Drow.js 🎭</h1>
+<p><strong>The Tiny, Object-Based Web Component Library.</strong></p>
+<p>Drow is a minimalist wrapper for the Web Components API. It replaces the boilerplate of JavaScript Classes with a clean, object-based configuration. Define your components as simple objects and let Drow handle the registration and rendering.</p>
+<h2>Why Drow?</h2>
+<ul>
+<li>🚫 <strong>Zero Dependencies</strong>: No NPM, no build steps, no headaches.</li>
+<li>📉 <strong>Microscopic Size</strong>: Tiny footprint with high performance.</li>
+<li>🧩 <strong>Object-First API</strong>: No more <code>class X extends HTMLElement</code> or <code>super()</code>.</li>
+<li>⚡ <strong>Native Performance</strong>: Uses the browser's built-in Custom Elements registry.</li>
+</ul>
 <div style="clear:both;padding-bottom:10px">
 <p>
 <img src="res/Drow-Setup.png"
      alt="Drow - Simple Web Component Library for creating custom HTML Components." />
 </p>
 </div>
-<h2>Updates</h2>
-<p>Converted object references to Drow and drow internal elements instead of DrowJS</p>
 <h2>Setup</h2>
-<p>Include the drow.js in an html file:</p>
-<pre class="prettyprint source"><code>&lt;script src=&quot;drow.js&quot;>&lt;/script>
+<p>Include <code>drow.js</code> in your HTML file:</p>
+<pre class="prettyprint source lang-html"><code>&lt;script src=&quot;drow.js&quot;>&lt;/script>
 </code></pre>
 <p>Or as an NPM Module</p>
 <pre class="prettyprint source"><code>import Drow from 'drow';
 </code></pre>
 <h2>Define a Drow Component</h2>
-<p>Define a Drow Object to setup a componet:</p>
-<p>Component needs to have a <br /></p>
-<ul>
-<li><strong>name</strong> : name of HTML Custom Component <br /></li>
-<li><strong>props</strong> : properties set on the Custom Component <br /></li>
-<li><strong>template</strong> : standard html template <br /></li>
-<li><strong>init</strong> : function() - optional<br /></li>
-<li><strong>watch</strong> : function(obj) - optional<br /></li>
-<li><strong>templating</strong> : You can now use handlebars/mustache style variables in templates there are applied by prop name
-Ex: {{prop1}}</li>
-</ul>
-<p>HTML</p>
-<pre class="prettyprint source"><code>&lt;my-comp prop1=&quot;AAA&quot; prop2=&quot;BBB&quot;> &lt;/my-comp>
-</code></pre>
-<p>JavaScript</p>
-<pre class="prettyprint source"><code>var config = {
-    &quot;name&quot; : &quot;my-comp&quot;,
-    &quot;props&quot;: ['prop1','prop2'],
-    &quot;template&quot;: `&lt;div>
-                  &lt;div>Every time you click on timestamp it will update the time.&lt;/div>
-            &lt;b>Click for the timestamp&lt;/b>&lt;div>{{prop1}}&lt;/div>
-            &lt;/div>`,
-    &quot;init&quot; : function(config) {
-        let prop1 = this.getProp('prop1') ? this.getAttribute('prop1') : &quot;&quot;;
-        //in the init this.getComp() is used to obtain the component
-
-      this.getComp().addEventListener('click', e => {
-			this.getComp().querySelector(&quot;b&quot;).innerHTML = new Date();
-		});
-    },
-    watch : function(attribute) {
-        if (attribute.name == 'name') { //in the watch this.comp is a reference to this component
-            attribute.comp.querySelector('b').innerHTML = `Hello, ${attribute.newValue}`;
-        }
+<p>Drow components are defined using simple objects. Reactivity is handled automatically via the <code>state</code> object and <code>methods</code>.</p>
+<pre class="prettyprint source lang-javascript"><code>const config = {
+  name: &quot;my-counter&quot;,
+  state: { count: 0 },
+  css: `button { font-weight: bold; }`,
+  template: `
+    &lt;div>
+      &lt;button @click=&quot;increment&quot;>Count is {{count}}&lt;/button>
+    &lt;/div>
+  `,
+  methods: {
+    increment() {
+      this.state.count++;
     }
-}
+  }
+};
 
-DrowJS.register(config);
-
+Drow.register(config);
 </code></pre>
-<h2>Outline</h2>
-<pre class="prettyprint source"><code>//Define Component
-&lt;my-comp title=&quot;Great Name&quot; link=&quot;https://something.com&quot;>
-  &lt;!-- 
-    Web Components must be in primary-secondary name separated by dash ie my-comp 
-    Componets and other HTML elements in the comp will be automatically added to the {{bind}} of the components template.
-  -->
-&lt;/my-comp>
-
-//Template for Component
-template = `&lt;div>
-  &lt;div>Title: {{title}}&lt;/div>
-  &lt;div>Link: {{link}}&lt;/div>
-&lt;/div>`
-
-//Component Config
-var myComp = {
-    &quot;name&quot; : &quot;my-comp&quot;,
-    &quot;props&quot;: ['title','link'],
-    &quot;template&quot;: template,
-    &quot;init&quot; : function(config) {       //optional init    
+<h2>Directives Reference</h2>
+<p>Drow uses simple directives to handle DOM logic reactively:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Directive</th>
+<th style="text-align:left">Description</th>
+<th style="text-align:left">Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>@event</code></td>
+<td style="text-align:left">Bind DOM events (click, input, etc.)</td>
+<td style="text-align:left"><code>@click=&quot;doSomething&quot;</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>d-model</code></td>
+<td style="text-align:left">Two-way binding for inputs</td>
+<td style="text-align:left"><code>d-model=&quot;username&quot;</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>d-for</code></td>
+<td style="text-align:left">Render a list of items</td>
+<td style="text-align:left"><code>d-for=&quot;item in items&quot;</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>d-if</code></td>
+<td style="text-align:left">Conditional rendering (adds/removes)</td>
+<td style="text-align:left"><code>d-if=&quot;isVisible&quot;</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>d-show</code></td>
+<td style="text-align:left">Conditional visibility (display: none)</td>
+<td style="text-align:left"><code>d-show=&quot;isVisible&quot;</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>d-class:name</code></td>
+<td style="text-align:left">Conditional CSS class</td>
+<td style="text-align:left"><code>d-class:active=&quot;isActive&quot;</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>d-bind:attr</code></td>
+<td style="text-align:left">Dynamic attribute binding</td>
+<td style="text-align:left"><code>d-bind:src=&quot;imageUrl&quot;</code></td>
+</tr>
+</tbody>
+</table>
+<h2>Interactive Demo: Todo List</h2>
+<p>This example demonstrates list rendering, two-way data binding, and event handling.</p>
+<pre class="prettyprint source lang-javascript"><code>const TodoApp = {
+  name: &quot;todo-app&quot;,
+  state: {
+    newTask: &quot;&quot;,
+    tasks: [&quot;Master Drow.js&quot;, &quot;Build a tiny app&quot;]
+  },
+  template: `
+    &lt;div class=&quot;todo-box&quot;>
+      &lt;h3>Task List ({{count}})&lt;/h3>
+      &lt;input d-model=&quot;newTask&quot; placeholder=&quot;Add a new task...&quot;>
+      &lt;button @click=&quot;addTask&quot;>Add&lt;/button>
+      &lt;button @click=&quot;clearTasks&quot;>Clear All&lt;/button>
+      
+      &lt;ul>
+        &lt;li d-for=&quot;task in tasks&quot;>
+          &lt;span>{{task}}&lt;/span>
+          &lt;button @click=&quot;removeTask&quot; data-item=&quot;{{task}}&quot;>x&lt;/button>
+        &lt;/li>
+      &lt;/ul>
+    &lt;/div>
+  `,
+  computed: {
+    count: (state) => state.tasks.length
+  },
+  methods: {
+    addTask() {
+      if (this.state.newTask.trim()) {
+        this.state.tasks = [...this.state.tasks, this.state.newTask];
+        this.state.newTask = &quot;&quot;; // Reset input
+      }
     },
-    watch : function(attribute) {    //optional watch -- hooks/useEffect
+    removeTask(e) {
+      const itemToRemove = e.target.dataset.item;
+      this.state.tasks = this.state.tasks.filter(t => t !== itemToRemove);
+    },
+    clearTasks() {
+      this.state.tasks = [];
     }
-}
-//Register Component
-DrowJS.register(myComp); //using the config created earlier
+  },
+  css: \`
+    .todo-box { border: 1px solid #444; padding: 1rem; border-radius: 8px; }
+    input { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #a78bfa; color: white; border: none; padding: 5px 10px; border-radius: 4px; }
+    li { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    li button { background: #ef4444; padding: 2px 8px; }
+  \`
+};
+
+Drow.register(TodoApp);
 </code></pre>
 <h2>Examples</h2>
-<p>Basic Example:</p>
-<p><a href="src/index.html">Example 1</a></p>
+<p>Check out the live interactive demos:</p>
+<ul>
+<li><a href="index.html">Basic Counter &amp; Time</a></li>
+</ul>
+<h2>Documentation</h2>
+<p>See the docs for usage and examples:</p>
+<ul>
+<li>docs/README.md</li>
+</ul>
 <h2>Setup from npm</h2>
-<p>First install dependencies:</p>
-<pre class="prettyprint source"><code>npm install
+<p>To use Drow in your project, install it via npm:</p>
+<pre class="prettyprint source lang-bash"><code>npm install drowjs
 </code></pre>
-<p>Run commands:</p>
-<pre class="prettyprint source"><code>npm run server
+<p>Once installed, you can import and use it in your module-based application:</p>
+<pre class="prettyprint source lang-javascript"><code>import { Drow } from 'drowjs';
+</code></pre>
+<h2>Local Development</h2>
+<p>To contribute to Drow.js or run the project locally for testing:</p>
+<pre class="prettyprint source lang-bash"><code>npm install
+npm run server
+</code></pre>
+<h3>Building</h3>
+<p>To generate the minified version <code>drow.min.js</code>, use Terser:</p>
+<pre class="prettyprint source lang-bash"><code># One-time minification
+npx terser drow.js -o drow.min.js --compress --mangle
 </code></pre>
 <h2>Credits</h2>
-<p>Author <a href="https://johnfacey.dev/">johnfacey.dev</a></p>
-<p>Twitter <a href="https://twitter.com/johnfacey">twitter.com/johnfacey</a></p></article>
+<p>Author <a href="https://johnfacey.dev/">johnfacey.dev</a></p></article>
     </section>
 
 
@@ -153,13 +226,13 @@ DrowJS.register(myComp); //using the config created earlier
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="DrowElements.html">DrowElements</a></li></ul><h3>Global</h3><ul><li><a href="global.html#getComp">getComp</a></li><li><a href="global.html#getProp">getProp</a></li><li><a href="global.html#getWrap">getWrap</a></li><li><a href="global.html#slots">slots</a></li><li><a href="global.html#updateVars">updateVars</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="DrowElements.html">DrowElements</a></li></ul><h3>Global</h3><ul><li><a href="global.html#applyEvents">applyEvents</a></li><li><a href="global.html#getComp">getComp</a></li><li><a href="global.html#getProp">getProp</a></li><li><a href="global.html#getWrap">getWrap</a></li><li><a href="global.html#processDirectives">processDirectives</a></li><li><a href="global.html#render">render</a></li><li><a href="global.html#updateVars">updateVars</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Sat May 07 2022 18:16:49 GMT-0500 (Central Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Sat May 02 2026 01:34:26 GMT-0500 (Central Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

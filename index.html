@@ -505,7 +505,7 @@
             <p class="subtitle">Zero dependencies. Under 1kb. No boilerplate. Just pure, native web components.</p>
             <div class="cta-buttons">
                 <a href="https://www.npmjs.com/package/drow" class="btn btn-primary">Install from npm</a>
-                <a href="https://github.com/johnfacey/drow" class="btn btn-secondary">View on GitHub</a>
+                <a href="https://github.com/johnfacey/drowjs" class="btn btn-secondary">View on GitHub</a>
             </div>
         </section>
 
@@ -569,7 +569,7 @@ Drow.register(config);</code></div>
         <section class="demo-section" id="demo">
             <h2>Try It Live</h2>
             <div class="demo-container">
-                <time-demo></time-demo>
+                <todo-app></todo-app>
                 <div style="color: var(--text-secondary); font-size: 14px; margin-top: 30px;">
                     This component was created with just an object definition. No complex setup required.
                 </div>
@@ -620,18 +620,18 @@ Drow.register(config);</code></div>
                 </div>
                 <div class="footer-link">
                     <strong style="color: var(--accent-purple);">Links</strong>
-                    <a href="https://github.com/johnfacey/drow">GitHub</a>
+                    <a href="https://github.com/johnfacey/drowjs">GitHub</a>
                     <a href="https://www.npmjs.com/package/drow">NPM</a>
                 </div>
                 <div class="footer-link">
                     <strong style="color: var(--accent-purple);">Community</strong>
-                    <a href="https://twitter.com/johnfacey">Twitter</a>
+                    <a href="https://x.com/johnfacey">Twitter</a>
                     <a href="https://johnfacey.dev">Author</a>
                 </div>
                 <div class="footer-link">
                     <strong style="color: var(--accent-purple);">Docs</strong>
-                    <a href="https://github.com/johnfacey/drow#documentation">README</a>
-                    <a href="https://github.com/johnfacey/drow/tree/master/docs">Guides</a>
+                    <a href="https://github.com/johnfacey/drowjs#documentation">README</a>
+                    <a href="https://github.com/johnfacey/drowjs/tree/master/docs">Guides</a>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -644,22 +644,50 @@ Drow.register(config);</code></div>
     <script src="drow.js"></script>
 
     <script>
-        // Register the Drow component for the interactive demo
+        // Register the Todo App component for the interactive demo
         Drow.register({
-            name: "time-demo",
-            state: { time: "Ready to click..." },
-            template: `
-                <div class="demo-box">
-                    <div class="demo-text">Click the button to see Drow in action</div>
-                    <button class="demo-button" @click="update">Get Current Time</button>
-                    <div class="timestamp" style="animation: fadeInUp 0.3s ease-out">{{time}}</div>
-                </div>
-            `,
-            methods: {
-                update() {
-                    this.state.time = new Date().toLocaleTimeString();
-                }
+          name: "todo-app",
+          state: {
+            newTask: "",
+            tasks: ["Master Drow.js", "Build a tiny app"]
+          },
+          template: `
+            <div class="todo-box">
+              <h3 style="margin-bottom: 15px;">Task List ({{count}})</h3>
+              <input d-model="newTask" placeholder="Add a new task..." style="color: #333; padding: 8px; border-radius: 4px;">
+              <button @click="addTask" class="demo-button" style="padding: 8px 16px;">Add</button>
+              <button @click="clearTasks" class="demo-button" style="padding: 8px 16px; background: transparent; border: 1px solid var(--accent-purple);">Clear</button>
+              
+              <ul style="list-style: none; margin-top: 20px; text-align: left; max-width: 300px; margin-left: auto; margin-right: auto;">
+                <li d-for="task in tasks" style="padding: 8px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                  <span>{{task}}</span>
+                  <button @click="removeTask" data-item="{{task}}" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer;">x</button>
+                </li>
+              </ul>
+            </div>
+          `,
+          computed: {
+            count: (state) => state.tasks.length
+          },
+          methods: {
+            addTask() {
+              if (this.state.newTask.trim()) {
+                this.state.tasks = [...this.state.tasks, this.state.newTask];
+                this.state.newTask = ""; // Reset input
+              }
+            },
+            removeTask(e) {
+              const itemToRemove = e.target.dataset.item;
+              this.state.tasks = this.state.tasks.filter(t => t !== itemToRemove);
+            },
+            clearTasks() {
+              this.state.tasks = [];
             }
+          },
+          css: `
+            .todo-box { padding: 1rem; border-radius: 8px; }
+            input { width: 200px; margin-bottom: 10px; }
+          `
         });
     </script>
 </body>

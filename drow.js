@@ -476,9 +476,7 @@ const Drow = {
 };
 
 if ((typeof process !== 'undefined') && (process.release.name === 'node')) {
-  module.exports = {
-    Drow: Drow
-  };
+  module.exports = Drow;
 } else {
   window.Drow = Drow;
 }

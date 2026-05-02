@@ -9,7 +9,7 @@ Drow is a minimalist wrapper for the Web Components API. It replaces the boilerp
 ## Why Drow?
 
 - 🚫 **Zero Dependencies**: No NPM, no build steps, no headaches.
-- 📉 **Microscopic Size**: Under 1kb gzipped.
+- 📉 **Microscopic Size**: Tiny footprint with high performance.
 - 🧩 **Object-First API**: No more `class X extends HTMLElement` or `super()`.
 - ⚡ **Native Performance**: Uses the browser's built-in Custom Elements registry.
 
@@ -20,14 +20,11 @@ Drow is a minimalist wrapper for the Web Components API. It replaces the boilerp
 </p>
 </div>
 
-## Updates
-
-Converted object references to Drow and drow internal elements instead of DrowJS
 ## Setup
 
-Include the drow.js in an html file:
+Include `drow.js` in your HTML file:
 
-```
+```html
 <script src="drow.js"></script>
 ```
 
@@ -38,86 +35,102 @@ import Drow from 'drow';
 
 ## Define a Drow Component
 
-Define a Drow Object to setup a component. This "JSON-like" definition makes it easy to build components without dealing with complex class syntax.
+Drow components are defined using simple objects. Reactivity is handled automatically via the `state` object and `methods`.
 
-Component needs to have a <br />
-- **name** : name of HTML Custom Component <br />
-- **props** : properties set on the Custom Component <br />
-- **state** : reactive state object <br />
-- **template** : standard html template <br />
-- **methods** : functions for event handling <br />
-- **css** : component-scoped CSS <br />
-- **templating** : You can now use handlebars/mustache style variables in templates there are applied by prop name 
-    Ex: {{prop1}}
-
-HTML
-```
-<my-comp prop1="AAA" prop2="BBB"> </my-comp>
-```
-JavaScript 
-```
-var config = {
-    "name" : "my-comp",
-    "props": ['prop1','prop2'],
-    "css": "b { color: blue; }",
-    "template": `<div>
-                  <div>Every time you click on timestamp it will update the time.</div>
-            <b>Click for the timestamp</b><div>{{prop1}}</div>
-            </div>`,
-    "init" : function(config) {
-        let prop1 = this.getProp('prop1') ? this.getAttribute('prop1') : "";
-        //in the init this.getComp() is used to obtain the component
-
-      this.getComp().addEventListener('click', e => {
-			this.getComp().querySelector("b").innerHTML = new Date();
-		});
-    },
-    watch : function(attribute) {
-        if (attribute.name == 'name') { //in the watch this.comp is a reference to this component
-            attribute.comp.querySelector('b').innerHTML = `Hello, ${attribute.newValue}`;
-        }
+```javascript
+const config = {
+  name: "my-counter",
+  state: { count: 0 },
+  css: `button { font-weight: bold; }`,
+  template: `
+    <div>
+      <button @click="increment">Count is {{count}}</button>
+    </div>
+  `,
+  methods: {
+    increment() {
+      this.state.count++;
     }
-}
+  }
+};
 
 Drow.register(config);
-
 ```
 
-## Outline
-```
-//Define Component
-<my-comp title="Great Name" link="https://something.com">
-  <!-- 
-    Web Components must be in primary-secondary name separated by dash ie my-comp 
-    Componets and other HTML elements in the comp will be automatically added to the {{bind}} of the components template.
-  -->
-</my-comp>
+## Directives Reference
 
-//Template for Component
-template = `<div>
-  <div>Title: {{title}}</div>
-  <div>Link: {{link}}</div>
-</div>`
+Drow uses simple directives to handle DOM logic reactively:
 
-//Component Config
-var myComp = {
-    "name" : "my-comp",
-    "props": ['title','link'],
-    "template": template,
-    "init" : function(config) {       //optional init    
+| Directive | Description | Example |
+| :--- | :--- | :--- |
+| `@event` | Bind DOM events (click, input, etc.) | `@click="doSomething"` |
+| `d-model` | Two-way binding for inputs | `d-model="username"` |
+| `d-for` | Render a list of items | `d-for="item in items"` |
+| `d-if` | Conditional rendering (adds/removes) | `d-if="isVisible"` |
+| `d-show` | Conditional visibility (display: none) | `d-show="isVisible"` |
+| `d-class:name` | Conditional CSS class | `d-class:active="isActive"` |
+| `d-bind:attr` | Dynamic attribute binding | `d-bind:src="imageUrl"` |
+
+## Interactive Demo: Todo List
+
+This example demonstrates list rendering, two-way data binding, and event handling.
+
+```javascript
+const TodoApp = {
+  name: "todo-app",
+  state: {
+    newTask: "",
+    tasks: ["Master Drow.js", "Build a tiny app"]
+  },
+  template: `
+    <div class="todo-box">
+      <h3>Task List ({{count}})</h3>
+      <input d-model="newTask" placeholder="Add a new task...">
+      <button @click="addTask">Add</button>
+      <button @click="clearTasks">Clear All</button>
+      
+      <ul>
+        <li d-for="task in tasks">
+          <span>{{task}}</span>
+          <button @click="removeTask" data-item="{{task}}">x</button>
+        </li>
+      </ul>
+    </div>
+  `,
+  computed: {
+    count: (state) => state.tasks.length
+  },
+  methods: {
+    addTask() {
+      if (this.state.newTask.trim()) {
+        this.state.tasks = [...this.state.tasks, this.state.newTask];
+        this.state.newTask = ""; // Reset input
+      }
     },
-    watch : function(attribute) {    //optional watch -- hooks/useEffect
+    removeTask(e) {
+      const itemToRemove = e.target.dataset.item;
+      this.state.tasks = this.state.tasks.filter(t => t !== itemToRemove);
+    },
+    clearTasks() {
+      this.state.tasks = [];
     }
-}
-//Register Component
-Drow.register(myComp); //using the config created earlier
+  },
+  css: \`
+    .todo-box { border: 1px solid #444; padding: 1rem; border-radius: 8px; }
+    input { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #a78bfa; color: white; border: none; padding: 5px 10px; border-radius: 4px; }
+    li { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    li button { background: #ef4444; padding: 2px 8px; }
+  \`
+};
+
+Drow.register(TodoApp);
 ```
 
 ## Examples
 
-Basic Example:
-
- [Example 1](src/index.html)
+Check out the live interactive demos:
+- [Basic Counter & Time](index.html)
 
 ## Documentation
 
@@ -129,19 +142,36 @@ See the docs for usage and examples:
 
 ## Setup from npm
 
-First install dependencies:
+To use Drow in your project, install it via npm:
 
+```bash
+npm install drowjs
 ```
+
+Once installed, you can import and use it in your module-based application:
+
+```javascript
+import { Drow } from 'drowjs';
+```
+
+## Local Development
+
+To contribute to Drow.js or run the project locally for testing:
+
+```bash
 npm install
+npm run server
 ```
 
-Run commands:
-```
-npm run server
+### Building
+
+To generate the minified version `drow.min.js`, use Terser:
+
+```bash
+# One-time minification
+npx terser drow.js -o drow.min.js --compress --mangle
 ```
 
 ## Credits
 
 Author [johnfacey.dev](https://johnfacey.dev/)
-
-Twitter [twitter.com/johnfacey](https://twitter.com/johnfacey)
