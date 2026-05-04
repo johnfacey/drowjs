@@ -1,7 +1,7 @@
 {
   "name": "drowjs",
-  "version": "0.9",
-  "description": "Web Component Wrapper for creating custom HTML Components.",
+  "version": "1.0.0",
+  "description": "The Tiny, Object-Based Web Component Library.",
   "repository": {
     "type": "git",
     "url": "https://github.com/johnfacey/drowjs.git"
