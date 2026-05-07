@@ -1,4 +1,32 @@
-var DrowElements = [];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: drow.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: drow.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var DrowElements = [];
 
 /**
  * Drow.js - The Tiny, Object-Based Web Component Library.
@@ -32,13 +60,13 @@ const Drow = {
    * @memberof Drow
    * @example
    *
-   * // <my-counter></my-counter>
+   * // &lt;my-counter>&lt;/my-counter>
    *
    * const config = {
    *   name: "my-counter",
    *   state: { count: 0 },
    *   css: `button { color: red; }`,
-   *   template: `<button @click="increment">Count is {{count}}</button>`,
+   *   template: `&lt;button @click="increment">Count is {{count}}&lt;/button>`,
    *   methods: {
    *     increment() {
    *       this.state.count++;
@@ -82,7 +110,7 @@ const Drow = {
         }
 
         connectedCallback() {
-          if (config.shadow && !this.shadowRoot) {
+          if (config.shadow &amp;&amp; !this.shadowRoot) {
             this.attachShadow({
               mode: "open"
             });
@@ -99,7 +127,7 @@ const Drow = {
           this.render();
 
           this.init(config);
-          if (config.append !== undefined && config.append !== "") {
+          if (config.append !== undefined &amp;&amp; config.append !== "") {
             document
               .querySelector("head")
               .replaceChild(this, document.querySelector("head"));
@@ -110,7 +138,7 @@ const Drow = {
           if (config.useStore) {
             Drow.store.unsubscribe(this);
           }
-          if (config.disconnected && typeof config.disconnected === 'function') {
+          if (config.disconnected &amp;&amp; typeof config.disconnected === 'function') {
             config.disconnected.call(this);
           }
         }
@@ -146,10 +174,10 @@ const Drow = {
 
           // Slotting / Content Projection
           if (config.shadow) {
-            template = template.replaceAll("{{bind}}", "<slot></slot>");
+            template = template.replaceAll("{{bind}}", "&lt;slot>&lt;/slot>");
           } else {
             // Light DOM Slotting Polyfill
-            if (template.includes('<slot') || template.includes('{{bind}}')) {
+            if (template.includes('&lt;slot') || template.includes('{{bind}}')) {
               const tempTemplate = document.createElement('template');
               tempTemplate.innerHTML = template;
               const content = tempTemplate.content;
@@ -195,18 +223,18 @@ const Drow = {
           let css = '';
           if (config.css) {
             if (config.shadow) {
-              css = `<style>${config.css}</style>`;
+              css = `&lt;style>${config.css}&lt;/style>`;
             } else {
-              const scopedCss = config.css.replaceAll(':host', '&');
-              css = `<style>${config.name} { ${scopedCss} }</style>`;
+              const scopedCss = config.css.replaceAll(':host', '&amp;');
+              css = `&lt;style>${config.name} { ${scopedCss} }&lt;/style>`;
             }
           }
-          const content = `<drow-wrapper>${css}${template}</drow-wrapper>`;
+          const content = `&lt;drow-wrapper>${css}${template}&lt;/drow-wrapper>`;
 
           // Capture Focus (to restore after render)
           const root = this.shadowRoot || document;
           let activeEl = root.activeElement;
-          if (!this.shadowRoot && (!activeEl || !this.contains(activeEl))) {
+          if (!this.shadowRoot &amp;&amp; (!activeEl || !this.contains(activeEl))) {
              activeEl = null;
           }
           
@@ -217,13 +245,13 @@ const Drow = {
           if (activeEl) {
              // Use ref or d-model as the key to identify the element
              focusKey = activeEl.getAttribute('ref') || activeEl.getAttribute('d-ref') || activeEl.getAttribute('d-model');
-             if (focusKey && (activeEl.type === 'text' || activeEl.tagName === 'TEXTAREA')) {
+             if (focusKey &amp;&amp; (activeEl.type === 'text' || activeEl.tagName === 'TEXTAREA')) {
                  selectionStart = activeEl.selectionStart;
                  selectionEnd = activeEl.selectionEnd;
              }
           }
 
-          if (config.shadow && this.shadowRoot) {
+          if (config.shadow &amp;&amp; this.shadowRoot) {
             this.shadowRoot.innerHTML = content;
           } else {
             this.innerHTML = content;
@@ -232,10 +260,10 @@ const Drow = {
           this.applyEvents();
 
           // Restore Focus
-          if (focusKey && this.refs[focusKey]) {
+          if (focusKey &amp;&amp; this.refs[focusKey]) {
               const el = this.refs[focusKey];
               el.focus();
-              if (el.setSelectionRange && (el.type === 'text' || el.tagName === 'TEXTAREA')) {
+              if (el.setSelectionRange &amp;&amp; (el.type === 'text' || el.tagName === 'TEXTAREA')) {
                   el.setSelectionRange(selectionStart, selectionEnd);
               }
           }
@@ -251,7 +279,7 @@ const Drow = {
          */
         updateVars(config) {
           let newConfig = config;
-          for (let i = 0; i < this.getAttributeNames().length; i++) {
+          for (let i = 0; i &lt; this.getAttributeNames().length; i++) {
             let thisAttr = this.getAttributeNames()[i];
             let thisAttrValue = this.getAttribute(thisAttr);
             if (thisAttr != 'bind') {
@@ -370,7 +398,7 @@ const Drow = {
 
         /**
          * Binds event listeners based on @event syntax in the template.
-         * Example: <button @click="handleClick">
+         * Example: &lt;button @click="handleClick">
          */
         applyEvents() {
           const root = this.shadowRoot || this;
@@ -389,7 +417,7 @@ const Drow = {
                 }
 
                 const methodName = attr.value;
-                if (config.methods && typeof config.methods[methodName] === 'function') {
+                if (config.methods &amp;&amp; typeof config.methods[methodName] === 'function') {
                   el.addEventListener(eventName, (e) => {
                     if (modifiers.includes('prevent')) e.preventDefault();
                     if (modifiers.includes('stop')) e.stopPropagation();
@@ -406,7 +434,7 @@ const Drow = {
               if (attr.name === 'd-model') {
                   const key = attr.value;
                   // Store ref for focus restoration if explicit ref is missing
-                  if (!el.hasAttribute('ref') && !el.hasAttribute('d-ref')) {
+                  if (!el.hasAttribute('ref') &amp;&amp; !el.hasAttribute('d-ref')) {
                       this.refs[key] = el;
                   }
                   
@@ -477,8 +505,30 @@ const Drow = {
   }
 };
 
-if ((typeof process !== 'undefined') && (process.release.name === 'node')) {
+if ((typeof process !== 'undefined') &amp;&amp; (process.release.name === 'node')) {
   module.exports = Drow;
 } else {
   window.Drow = Drow;
-}
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Drow.html">Drow</a></li></ul><h3>Global</h3><ul><li><a href="global.html#applyEvents">applyEvents</a></li><li><a href="global.html#getComp">getComp</a></li><li><a href="global.html#getProp">getProp</a></li><li><a href="global.html#getWrap">getWrap</a></li><li><a href="global.html#processDirectives">processDirectives</a></li><li><a href="global.html#render">render</a></li><li><a href="global.html#updateVars">updateVars</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Wed May 06 2026 16:50:08 GMT-0500 (Central Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

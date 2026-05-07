@@ -1,5 +1,5 @@
 import "./styles.css";
-import DrowJS from "./drow";
+import Drow from "./drow";
 
 document.getElementById("app").innerHTML = `
 <h1>Hello DrowJS!</h1>
@@ -29,5 +29,4 @@ var config = {
     }
   }
 };
-//DrowJS.register(config);
-
+//Drow.register(config);

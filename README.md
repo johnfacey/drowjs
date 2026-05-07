@@ -13,6 +13,12 @@ Drow is a minimalist wrapper for the Web Components API. It replaces the boilerp
 - 🧩 **Object-First API**: No more `class X extends HTMLElement` or `super()`.
 - ⚡ **Native Performance**: Uses the browser's built-in Custom Elements registry.
 
+## Core Concepts
+
+- ⚛️ **Reactivity**: Uses a Proxy-based system. When you update `this.state`, Drow automatically syncs the UI.
+- 💅 **Unified Styling**: Include scoped CSS directly in your component object via the `css` property.
+- 🔄 **Simplified Lifecycle**: Replaces complex native hooks with a single, intuitive `init` method.
+
 <div style="clear:both;padding-bottom:10px">
 <p>
 <img src="res/Drow-Setup.png"
@@ -134,9 +140,14 @@ Check out the live interactive demos:
 
 ## Documentation
 
-See the docs for usage and examples:
+Detailed API documentation is generated using JSDoc. To generate the documentation locally:
 
-- docs/README.md
+```bash
+npm run doc
+```
+
+The documentation is generated in the `docs/` directory. You can also view it online:
+**Live API Documentation**
 
 
 

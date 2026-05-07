@@ -1,12 +1,17 @@
 {
   "name": "drowjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The Tiny, Object-Based Web Component Library.",
   "repository": {
     "type": "git",
     "url": "https://github.com/johnfacey/drowjs.git"
   },
-  "main": "src/drow.js",
+  "main": "drow.js",
+  "module": "drow.js",
+  "files": [
+    "drow.js",
+    "dist"
+  ],
   "keywords": [
     "javascript",
     "web",
@@ -18,12 +23,13 @@
   "author": "John Facey II",
   "license": "ISC",
   "scripts": {
+    "build": "npm run clean && npm run minify",
     "clean": "rm -rf dist/*",
-    "doc": "jsdoc README.md drow.js",
+    "doc": "jsdoc README.md drow.js -d docs",
     "server": "http-server",
-    "minify": "npx terser drow.js -o drow.min.js --compress --mangle"
+    "minify": "terser drow.js -o dist/drow.min.js --compress --mangle"
   },
-  "dependencies": {
+  "devDependencies": {
     "http-server": "^14.1.0",
     "jsdoc": "^3.6.4",
     "terser": "^5.46.2"

@@ -51,6 +51,6 @@ var config3 = {
 }
 
 
-DrowJS.register(config);
-DrowJS.register(config2);
-DrowJS.register(config3);
+Drow.register(config);
+Drow.register(config2);
+Drow.register(config3);
