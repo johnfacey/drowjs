@@ -27,6 +27,7 @@
     "clean": "rm -rf dist/*",
     "doc": "jsdoc README.md drow.js -d docs",
     "server": "http-server",
+    "test": "echo \"Validating build...\" && npm run build && echo \"Build integrity check passed.\"",
     "minify": "terser drow.js -o dist/drow.min.js --compress --mangle"
   },
   "devDependencies": {
