@@ -351,12 +351,19 @@ const Drow = {
                 clone.removeAttribute('d-for');
                 let html = clone.outerHTML;
                 
+                const replaceTag = (tag, value) => {
+                  html = html.replaceAll(tag, value);
+                  // Handle browser URL encoding in attributes (e.g. src or href)
+                  const encodedTag = tag.replaceAll('{{', '%7B%7B').replaceAll('}}', '%7D%7D');
+                  html = html.replaceAll(encodedTag, value);
+                };
+
                 if (typeof item === 'object') {
                    Object.keys(item).forEach(key => {
-                       html = html.replaceAll(`{{${iterVar}.${key}}}`, item[key]);
+                       replaceTag(`{{${iterVar}.${key}}}`, item[key]);
                    });
                 } else {
-                   html = html.replaceAll(`{{${iterVar}}}`, item);
+                   replaceTag(`{{${iterVar}}}`, item);
                 }
                 
                 el.insertAdjacentHTML('beforebegin', html);
