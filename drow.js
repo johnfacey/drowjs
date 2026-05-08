@@ -207,7 +207,13 @@ const Drow = {
                 return acc && acc[part] !== undefined ? acc[part] : undefined;
             }, context);
 
-            return value !== undefined ? value : (this._originalContent && cleanKey === 'bind' ? this._originalContent : "");
+            if (value !== undefined) return value;
+            if (cleanKey === 'bind') return this._originalContent || "";
+
+            // Only clear the tag if it's a known root property (state, store, etc.)
+            // This prevents wiping out d-for iterator variables like {{img.id}}
+            const rootKey = cleanKey.split('.')[0];
+            return (rootKey in context) ? "" : match;
           });
 
           // 3. Handle Slotting/Shadow DOM specifics
@@ -353,7 +359,7 @@ const Drow = {
                    html = html.replaceAll(`{{${iterVar}}}`, item);
                 }
                 
-                parent.insertAdjacentHTML('beforebegin', html);
+                el.insertAdjacentHTML('beforebegin', html);
               });
               el.remove();
             }
