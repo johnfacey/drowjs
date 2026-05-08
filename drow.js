@@ -106,13 +106,19 @@ const Drow = {
           this.init = typeof config.init === "function" ? config.init : function() {};
           this.refs = {};
 
-          this.state = this._observable(config.state || {});
+          // Clone state from config to ensure per-instance reactivity 
+          // instead of shared object references
+          const initialState = config.state ? JSON.parse(JSON.stringify(config.state)) : {};
+          this.state = this._observable(initialState);
         }
 
         _observable(obj) {
           const self = this;
+          if (obj && obj._isProxy) return obj;
+          
           return new Proxy(obj, {
             get(target, key) {
+              if (key === '_isProxy') return true;
               const val = target[key];
               return (val && typeof val === 'object') ? self._observable(val) : val;
             },
@@ -168,7 +174,13 @@ const Drow = {
           if (!config.template) return;
 
           // 1. Prepare Merged Context (State + Computed + Props)
-          const context = { ...this.state };
+          // Extract plain values from Proxy state for the rendering context
+          const context = {};
+          if (this.state) {
+             Object.keys(this.state).forEach(key => {
+                context[key] = this.state[key];
+             });
+          }
           
           if (config.useStore) {
             context.store = Drow.store.state;
@@ -403,7 +415,8 @@ const Drow = {
                 const realAttr = attr.name.substring(7);
                 const stateKey = attr.value;
                 const value = getValue(stateKey);
-                if (value !== undefined) {
+                
+                if (value !== undefined && value !== null) {
                   el.setAttribute(realAttr, value);
                 }
                 el.removeAttribute(attr.name);
