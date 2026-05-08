@@ -170,6 +170,10 @@ const Drow = {
           // 1. Prepare Merged Context (State + Computed + Props)
           const context = { ...this.state };
           
+          if (config.useStore) {
+            context.store = Drow.store.state;
+          }
+
           if (config.computed) {
             Object.keys(config.computed).forEach(key => {
               context[key] = config.computed[key].call(this, this.state);
@@ -183,9 +187,15 @@ const Drow = {
           }
 
           // 2. Efficient Interpolation
-          let template = config.template.replace(/{{(.*?)}}/g, (match, key) => {
+          let template = config.template.replace(/{{([\s\S]*?)}}/g, (match, key) => {
             const cleanKey = key.trim();
-            return context[cleanKey] !== undefined ? context[cleanKey] : (this._originalContent && cleanKey === 'bind' ? this._originalContent : match);
+            
+            // Support nested property access (e.g., {{store.globalCount}})
+            const value = cleanKey.split('.').reduce((acc, part) => {
+                return acc && acc[part] !== undefined ? acc[part] : undefined;
+            }, context);
+
+            return value !== undefined ? value : (this._originalContent && cleanKey === 'bind' ? this._originalContent : match);
           });
 
           // 3. Handle Slotting/Shadow DOM specifics

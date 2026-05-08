@@ -751,7 +751,9 @@ Drow.register(config);</code></div>
             methods: {
                 randomize() {
                     const seeds = ["Felix", "Aneka", "Jack", "Max", "Midnight"];
-                    const randomSeed = seeds[Math.floor(Math.random() * seeds.length)];
+                    const currentSeed = this.state.avatar.split('seed=')[1] || "";
+                    const availableSeeds = seeds.filter(seed => seed !== currentSeed);
+                    const randomSeed = availableSeeds[Math.floor(Math.random() * availableSeeds.length)] || seeds[0];
                     this.state.avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${randomSeed}`;
                 }
             },
