@@ -195,7 +195,7 @@ const Drow = {
                 return acc && acc[part] !== undefined ? acc[part] : undefined;
             }, context);
 
-            return value !== undefined ? value : (this._originalContent && cleanKey === 'bind' ? this._originalContent : match);
+            return value !== undefined ? value : (this._originalContent && cleanKey === 'bind' ? this._originalContent : "");
           });
 
           // 3. Handle Slotting/Shadow DOM specifics
@@ -272,7 +272,7 @@ const Drow = {
           // 6. Targeted DOM Update
           (this.shadowRoot || this).innerHTML = content;
           
-          this.processDirectives();
+          this.processDirectives(context);
           this.applyEvents();
           this.emit = (name, detail) => {
             this.dispatchEvent(new CustomEvent(name, {
@@ -315,14 +315,21 @@ const Drow = {
         /**
          * Process directives like d-if and d-show.
          */
-        processDirectives() {
+        processDirectives(context) {
           const root = this.shadowRoot || this;
+          
+          // Helper to resolve nested paths (e.g. "user.avatar" or "store.url")
+          const getValue = (key) => {
+            return key.split('.').reduce((acc, part) => {
+              return acc && acc[part] !== undefined ? acc[part] : undefined;
+            }, context);
+          };
           
           // d-for (List Rendering)
           root.querySelectorAll('[d-for]').forEach(el => {
             const expr = el.getAttribute('d-for');
             const [iterVar, listName] = expr.split(' in ').map(s => s.trim());
-            const list = this.state[listName];
+            const list = getValue(listName);
             
             if (Array.isArray(list)) {
               const parent = el.parentNode;
@@ -350,7 +357,7 @@ const Drow = {
             const key = el.getAttribute('d-if');
             const isNegated = key.startsWith('!');
             const stateKey = isNegated ? key.substring(1) : key;
-            const value = this.state[stateKey];
+            const value = getValue(stateKey);
             
             if (isNegated ? value : !value) {
               el.remove();
@@ -364,7 +371,7 @@ const Drow = {
             const key = el.getAttribute('d-show');
             const isNegated = key.startsWith('!');
             const stateKey = isNegated ? key.substring(1) : key;
-            const value = this.state[stateKey];
+            const value = getValue(stateKey);
 
             if (isNegated ? value : !value) {
               el.style.display = 'none';
@@ -382,7 +389,7 @@ const Drow = {
                 const key = attr.value;
                 const isNegated = key.startsWith('!');
                 const stateKey = isNegated ? key.substring(1) : key;
-                const value = this.state[stateKey];
+                const value = getValue(stateKey);
 
                 if (isNegated ? !value : value) {
                   el.classList.add(className);
@@ -400,8 +407,9 @@ const Drow = {
               if (attr.name.startsWith('d-bind:')) {
                 const realAttr = attr.name.substring(7);
                 const stateKey = attr.value;
-                if (this.state[stateKey] !== undefined) {
-                  el.setAttribute(realAttr, this.state[stateKey]);
+                const value = getValue(stateKey);
+                if (value !== undefined) {
+                  el.setAttribute(realAttr, value);
                 }
                 el.removeAttribute(attr.name);
               }
@@ -411,8 +419,9 @@ const Drow = {
           // d-html (Raw HTML)
           root.querySelectorAll('[d-html]').forEach(el => {
              const key = el.getAttribute('d-html');
-             if (this.state[key] !== undefined) {
-               el.innerHTML = this.state[key];
+             const value = getValue(key);
+             if (value !== undefined) {
+               el.innerHTML = value;
              }
              el.removeAttribute('d-html');
           });
