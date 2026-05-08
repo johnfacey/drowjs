@@ -142,7 +142,9 @@ const Drow = {
 
           this.render();
 
-          this.init(config);
+          if (typeof this.init === "function") {
+            this.init(config);
+          }
           if (config.append !== undefined && config.append !== "") {
             document
               .querySelector("head")
