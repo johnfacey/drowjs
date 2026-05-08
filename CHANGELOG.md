@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2025-05-09
+
+### Added
+- **Nested Path Support**: Interpolation and directives now support dot notation (e.g., `{{store.key}}` or `{{user.profile.name}}`), enabling deep data access in templates.
+- **Attribute Encoding Support**: Added automatic handling for URL-encoded characters (like `%7B%7B`) in `d-for` attribute interpolation, resolving broken images in galleries.
+
+### Fixed
+- **Component Isolation**: Implemented deep-cloning of initial state per instance to prevent unintended shared reactivity between multiple components of the same type.
+- **Directive Resolution**: Fixed directives (`d-bind`, `d-if`, etc.) to correctly resolve values from the merged context, including Global Store and Computed properties.
+- **Loop Insertion**: Corrected the DOM insertion point for `d-for` items to ensure elements are rendered as direct siblings to the template, maintaining CSS scoping.
+- **Rendering Engine**: Removed an aggressive dirty-checking optimization that was preventing visual updates to attributes when the inner HTML structure remained identical.
+- **Initialization Safety**: Added guard checks in the component constructor to prevent `TypeError` when components are registered without an explicit `init` method.
+
 ## [1.0.2] - 2025-05-08
 
 ### Added
