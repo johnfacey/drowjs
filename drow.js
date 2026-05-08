@@ -248,11 +248,6 @@ const Drow = {
 
           const content = `<drow-wrapper>${css}${template}</drow-wrapper>`;
 
-          // 4. Performance Optimization: Dirty Checking
-          // If the generated HTML is identical to the last render, skip DOM updates and re-binding
-          if (this._lastRendered === content) return;
-          this._lastRendered = content;
-
           // 5. Capture Focus state
           const root = this.shadowRoot || document;
           let activeEl = root.activeElement;
