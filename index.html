@@ -576,6 +576,40 @@ Drow.register(config);</code></div>
             </div>
         </section>
 
+        <!-- Shared Store Demo -->
+        <section class="demo-section" style="border-top: 1px solid var(--border-color);">
+            <h2>Global Store Sync</h2>
+            <div class="demo-container" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <store-counter></store-counter>
+                <store-counter></store-counter>
+                <div style="width: 100%; color: var(--text-secondary); font-size: 14px;">
+                    These two independent components share a single source of truth via <code>Drow.store</code>.
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Binding Demo -->
+        <section class="demo-section" style="border-top: 1px solid var(--border-color);">
+            <h2>Dynamic Attribute Binding</h2>
+            <div class="demo-container">
+                <profile-card></profile-card>
+                <div style="margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
+                    The <code>src</code> and <code>href</code> attributes above are updated reactively using <code>d-bind</code>.
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Demo -->
+        <section class="demo-section" style="border-top: 1px solid var(--border-color);">
+            <h2>Dynamic Gallery</h2>
+            <div class="demo-container">
+                <image-gallery></image-gallery>
+                <div style="margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
+                    This gallery iterates over an array of objects using <code>d-for="img in images"</code>.
+                </div>
+            </div>
+        </section>
+
         <!-- Comparison -->
         <section class="comparison" id="vs">
             <h2>Why Choose Drow?</h2>
@@ -692,6 +726,71 @@ Drow.register(config);</code></div>
             .todo-box { padding: 1rem; border-radius: 8px; }
             input { width: 200px; margin-bottom: 10px; }
           `
+        });
+
+        // Shared Store Demo Components
+        Drow.register({
+            name: "store-counter",
+            useStore: true,
+            methods: {
+                inc() {
+                    Drow.store.state.globalCount = (Drow.store.state.globalCount || 0) + 1;
+                }
+            },
+            template: `<button @click="inc" class="demo-button">Global Count: {{store.globalCount}}</button>`
+        });
+
+        // Dynamic Binding Demo Component
+        Drow.register({
+            name: "profile-card",
+            state: {
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+                profileUrl: "https://github.com/johnfacey",
+                username: "johnfacey"
+            },
+            methods: {
+                randomize() {
+                    const seeds = ["Felix", "Aneka", "Jack", "Max", "Midnight"];
+                    const randomSeed = seeds[Math.floor(Math.random() * seeds.length)];
+                    this.state.avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${randomSeed}`;
+                }
+            },
+            template: `
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                    <img d-bind:src="avatar" d-bind:alt="username" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--accent-purple);">
+                    <a d-bind:href="profileUrl" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-weight: 600;">
+                        View @{{username}} on GitHub
+                    </a>
+                    <button @click="randomize" class="demo-button" style="font-size: 14px; padding: 8px 16px;">Randomize Avatar</button>
+                </div>
+            `
+        });
+
+        // Gallery Demo Component
+        Drow.register({
+            name: "image-gallery",
+            state: {
+                images: [
+                    { id: 1011, title: "Lake" },
+                    { id: 1015, title: "River" },
+                    { id: 1016, title: "Canyon" }
+                ]
+            },
+            template: `
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <div d-for="img in images" style="background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <img src="https://picsum.photos/id/{{img.id}}/150/100" alt="{{img.title}}" style="border-radius: 4px; display: block; margin-bottom: 8px;">
+                        <span style="font-size: 12px; color: var(--accent-gold);">{{img.title}}</span>
+                    </div>
+                </div>
+            `,
+            css: `
+                div:hover {
+                    border-color: var(--accent-cyan) !important;
+                    transform: scale(1.05);
+                    transition: all 0.2s ease;
+                }
+            `
         });
     </script>
 </body>

@@ -8,8 +8,10 @@
   },
   "main": "drow.js",
   "module": "drow.js",
+  "types": "drow.d.ts",
   "files": [
     "drow.js",
+    "drow.d.ts",
     "dist"
   ],
   "keywords": [

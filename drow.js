@@ -48,6 +48,40 @@ const Drow = {
    *
    * Drow.register(config);
    *
+   * @example
+   * // Using Computed Properties and Lifecycle Hooks
+   * Drow.register({
+   *   name: "timer-display",
+   *   state: { seconds: 0 },
+   *   computed: {
+   *     minutes: (state) => Math.floor(state.seconds / 60)
+   *   },
+   *   init() {
+   *     this.timer = setInterval(() => this.state.seconds++, 1000);
+   *   },
+   *   disconnected() {
+   *     clearInterval(this.timer);
+   *   },
+   *   template: `<div>Time: {{minutes}}m {{seconds}}s</div>`
+   * });
+   *
+   * @example
+   * // Using the Global Store
+   * Drow.register({
+   *   name: "store-sync",
+   *   useStore: true,
+   *   methods: {
+   *     updateGlobal() {
+   *       Drow.store.state.user = "John";
+   *     }
+   *   },
+   *   template: `
+   *     <div>
+   *       <p>Global User: {{store.user}}</p>
+   *       <button @click="updateGlobal">Set User</button>
+   *     </div>
+   *   `
+   * });
    */
   register(config) {
     for (const element of DrowElements) {
@@ -72,10 +106,20 @@ const Drow = {
           this.init = config.init;
           this.refs = {};
 
-          this.state = new Proxy(config.state || {}, {
-            set: (target, key, value) => {
+          this.state = this._observable(config.state || {});
+        }
+
+        _observable(obj) {
+          const self = this;
+          return new Proxy(obj, {
+            get(target, key) {
+              const val = target[key];
+              return (val && typeof val === 'object') ? self._observable(val) : val;
+            },
+            set(target, key, value) {
+              if (target[key] === value) return true;
               target[key] = value;
-              this.render();
+              self.render();
               return true;
             }
           });
@@ -119,45 +163,40 @@ const Drow = {
          * Renders the component template with current state and props.
          */
         render() {
-          let template = config.template;
+          if (!config.template) return;
 
-          // Prepare Data (State + Computed)
-          let data = { ...this.state };
+          // 1. Prepare Merged Context (State + Computed + Props)
+          const context = { ...this.state };
+          
           if (config.computed) {
             Object.keys(config.computed).forEach(key => {
-              data[key] = config.computed[key].call(this, this.state);
+              context[key] = config.computed[key].call(this, this.state);
             });
           }
 
-          // Replace Data
-          if (data) {
-            for (const [key, value] of Object.entries(data)) {
-              template = template.replaceAll(`{{${key}}}`, value);
-            }
-          }
-
-          // Replace Props
           if (config.props) {
             config.props.forEach(prop => {
-              const value = this.getAttribute(prop) || "";
-              template = template.replaceAll(`{{${prop}}}`, value);
+              context[prop] = this.getAttribute(prop) || "";
             });
           }
 
-          // Slotting / Content Projection
+          // 2. Efficient Interpolation
+          let template = config.template.replace(/{{(.*?)}}/g, (match, key) => {
+            const cleanKey = key.trim();
+            return context[cleanKey] !== undefined ? context[cleanKey] : (this._originalContent && cleanKey === 'bind' ? this._originalContent : match);
+          });
+
+          // 3. Handle Slotting/Shadow DOM specifics
           if (config.shadow) {
-            template = template.replaceAll("{{bind}}", "<slot></slot>");
+            template = template.replace("<slot></slot>", "{{bind}}").replace("{{bind}}", "<slot></slot>");
           } else {
-            // Light DOM Slotting Polyfill
             if (template.includes('<slot') || template.includes('{{bind}}')) {
               const tempTemplate = document.createElement('template');
               tempTemplate.innerHTML = template;
               const content = tempTemplate.content;
-
               const userContentDiv = document.createElement('div');
               userContentDiv.innerHTML = this._originalContent || '';
 
-              // Named Slots
               content.querySelectorAll('slot[name]').forEach(slot => {
                 const name = slot.getAttribute('name');
                 const userElements = userContentDiv.querySelectorAll(`[slot="${name}"]`);
@@ -173,7 +212,6 @@ const Drow = {
                 }
               });
 
-              // Default Slot
               const defaultSlot = content.querySelector('slot:not([name])');
               if (defaultSlot) {
                 const frag = document.createDocumentFragment();
@@ -182,13 +220,7 @@ const Drow = {
                 }
                 defaultSlot.replaceWith(frag);
               }
-
               template = tempTemplate.innerHTML;
-
-              // Legacy {{bind}} support
-              if (this._originalContent) {
-                template = template.replaceAll("{{bind}}", this._originalContent);
-              }
             }
           }
 
@@ -201,42 +233,48 @@ const Drow = {
               css = `<style>${config.name} { ${scopedCss} }</style>`;
             }
           }
+
           const content = `<drow-wrapper>${css}${template}</drow-wrapper>`;
 
-          // Capture Focus (to restore after render)
+          // 4. Performance Optimization: Dirty Checking
+          // If the generated HTML is identical to the last render, skip DOM updates and re-binding
+          if (this._lastRendered === content) return;
+          this._lastRendered = content;
+
+          // 5. Capture Focus state
           const root = this.shadowRoot || document;
           let activeEl = root.activeElement;
-          if (!this.shadowRoot && (!activeEl || !this.contains(activeEl))) {
-             activeEl = null;
-          }
+          if (!this.shadowRoot && (!activeEl || !this.contains(activeEl))) activeEl = null;
           
           let focusKey = null;
-          let selectionStart = 0;
-          let selectionEnd = 0;
+          let selection = { start: 0, end: 0 };
 
           if (activeEl) {
-             // Use ref or d-model as the key to identify the element
              focusKey = activeEl.getAttribute('ref') || activeEl.getAttribute('d-ref') || activeEl.getAttribute('d-model');
              if (focusKey && (activeEl.type === 'text' || activeEl.tagName === 'TEXTAREA')) {
-                 selectionStart = activeEl.selectionStart;
-                 selectionEnd = activeEl.selectionEnd;
+                 selection.start = activeEl.selectionStart;
+                 selection.end = activeEl.selectionEnd;
              }
           }
 
-          if (config.shadow && this.shadowRoot) {
-            this.shadowRoot.innerHTML = content;
-          } else {
-            this.innerHTML = content;
-          }
+          // 6. Targeted DOM Update
+          (this.shadowRoot || this).innerHTML = content;
+          
           this.processDirectives();
           this.applyEvents();
+          this.emit = (name, detail) => {
+            this.dispatchEvent(new CustomEvent(name, {
+              detail,
+              bubbles: true,
+              composed: true
+            }));
+          };
 
-          // Restore Focus
           if (focusKey && this.refs[focusKey]) {
               const el = this.refs[focusKey];
               el.focus();
               if (el.setSelectionRange && (el.type === 'text' || el.tagName === 'TEXTAREA')) {
-                  el.setSelectionRange(selectionStart, selectionEnd);
+                  el.setSelectionRange(selection.start, selection.end);
               }
           }
         }
@@ -365,6 +403,14 @@ const Drow = {
                el.innerHTML = this.state[key];
              }
              el.removeAttribute('d-html');
+          });
+
+          // d-cloak (Removes cloak attribute once component is rendered)
+          if (this.hasAttribute('d-cloak')) {
+            this.removeAttribute('d-cloak');
+          }
+          root.querySelectorAll('[d-cloak]').forEach(el => {
+            el.removeAttribute('d-cloak');
           });
         }
 
