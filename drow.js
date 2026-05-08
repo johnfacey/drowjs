@@ -103,7 +103,7 @@ const Drow = {
           super();
           this.setAttribute("Drow-component", true);
           this.setAttribute("Drow-name", config.name);
-          this.init = config.init;
+          this.init = typeof config.init === "function" ? config.init : function() {};
           this.refs = {};
 
           this.state = this._observable(config.state || {});
