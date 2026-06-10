@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4] - 2025-06-09
+
+### Added
+- **Render Batching**: State mutations are now coalesced via `requestAnimationFrame`. Multiple synchronous state changes within the same frame trigger only a single DOM update.
+- **Keyed `d-for` Diffing**: Add `d-key="{{item.id}}"` to a `d-for` element to enable efficient list patching. Drow reuses existing DOM nodes and only inserts/removes what changed, instead of rebuilding the entire list.
+- **`d-for` Index Support**: Loop syntax now supports `(item, index) in items`, exposing `{{index}}` inside the loop body.
+- **`d-else` / `d-else-if` Directives**: Conditional blocks can now chain naturally. Elements immediately following a `d-if` may carry `d-else-if="condition"` or `d-else` and will be resolved correctly.
+- **`d-model` Deep Path Binding**: Two-way binding now supports nested state paths, e.g. `d-model="user.name"` reads and writes through the nested state object.
+- **`updated()` Lifecycle Hook**: A new optional hook called after every render cycle. Useful for post-render DOM inspection or analytics.
+- **`Drow.debug` Flag**: Defaults to `true`. Set `Drow.debug = false` in production to suppress all registration logs. In debug mode, Drow warns on missing hyphens in component names and unknown config keys.
+- **TypeScript Definitions**: Added `drow.d.ts` with full type coverage for all config options, directives, lifecycle hooks, the global store, and `Drow.debug`.
+
+### Fixed
+- **Silent `watch` Errors**: Replaced the bare `try/catch` in `attributeChangedCallback` — `watch` is now only invoked when it is a function, and errors propagate normally.
+- **Proxy Stability**: Arrays are no longer wrapped in nested Proxies, preventing reference instability and subtle spurious re-renders when iterating over array state.
+- **`_observable` Re-wrapping**: Added a guard so already-proxied objects are not double-wrapped on repeated reads.
+
+### Changed
+- **Global Store Rendering**: Store mutations now use `_scheduleRender` (batched) instead of calling `render()` directly.
+- **`attributeChangedCallback`**: Re-renders are now batched via `_scheduleRender` rather than calling `render()` synchronously on every attribute change.
+- **Removed Dead Code**: `updateVars()` method removed — superseded by the render pipeline's interpolation pass since 1.0.2.
+- **`append` Logic Removed**: The broken `append` config option (which attempted an invalid `replaceChild` in `<head>`) has been removed.
+
 ## [1.0.3] - 2025-05-09
 
 ### Added

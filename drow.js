@@ -7,13 +7,19 @@ var DrowElements = [];
  */
 const Drow = {
   /**
+   * Enable debug logging. Set to false in production.
+   * @type {boolean}
+   */
+  debug: true,
+
+  /**
    * Global Store for sharing state between components.
    */
   store: {
     state: new Proxy({}, {
       set: (target, key, value) => {
         target[key] = value;
-        Drow.store.listeners.forEach(l => l.render());
+        Drow.store.listeners.forEach(l => l._scheduleRender());
         return true;
       }
     }),
@@ -25,6 +31,7 @@ const Drow = {
       this.listeners = this.listeners.filter(l => l !== comp);
     }
   },
+
   /**
    * Registers a new Web Component using Drow.register(config).
    * @param {object} config - Configuration object for the component.
@@ -62,6 +69,9 @@ const Drow = {
    *   disconnected() {
    *     clearInterval(this.timer);
    *   },
+   *   updated() {
+   *     console.log('timer-display re-rendered');
+   *   },
    *   template: `<div>Time: {{minutes}}m {{seconds}}s</div>`
    * });
    *
@@ -84,10 +94,27 @@ const Drow = {
    * });
    */
   register(config) {
+    // --- Dev-mode config validation ---
+    if (Drow.debug) {
+      if (!config.name || typeof config.name !== 'string') {
+        console.warn('Drow: config.name is required and must be a string.');
+        return this;
+      }
+      if (!config.name.includes('-')) {
+        console.warn(`Drow: component name "${config.name}" must contain a hyphen (Custom Elements spec requirement).`);
+      }
+      const knownKeys = ['name','state','template','css','methods','computed','props','init','disconnected','updated','watch','shadow','useStore','append'];
+      Object.keys(config).forEach(k => {
+        if (!knownKeys.includes(k)) {
+          console.warn(`Drow [${config.name}]: unknown config key "${k}".`);
+        }
+      });
+    }
+
     for (const element of DrowElements) {
       if (element === config.name) {
-        console.log(`Drow ${config.name} already Registered`);
-        return;
+        if (Drow.debug) console.log(`Drow ${config.name} already Registered`);
+        return this;
       }
     }
     DrowElements.push(config.name);
@@ -105,9 +132,9 @@ const Drow = {
           this.setAttribute("Drow-name", config.name);
           this.init = typeof config.init === "function" ? config.init : function() {};
           this.refs = {};
+          this._renderPending = false;
 
-          // Clone state from config to ensure per-instance reactivity 
-          // instead of shared object references
+          // Clone state from config to ensure per-instance reactivity
           const initialState = config.state ? JSON.parse(JSON.stringify(config.state)) : {};
           this.state = this._observable(initialState);
         }
@@ -115,27 +142,41 @@ const Drow = {
         _observable(obj) {
           const self = this;
           if (obj && obj._isProxy) return obj;
-          
+
           return new Proxy(obj, {
             get(target, key) {
               if (key === '_isProxy') return true;
               const val = target[key];
-              return (val && typeof val === 'object') ? self._observable(val) : val;
+              // Only wrap plain objects — not arrays, dates, etc.
+              if (val !== null && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
+                return self._observable(val);
+              }
+              return val;
             },
             set(target, key, value) {
               if (target[key] === value) return true;
               target[key] = value;
-              self.render();
+              self._scheduleRender();
               return true;
             }
           });
         }
 
+        /**
+         * Batches render calls within the same animation frame.
+         */
+        _scheduleRender() {
+          if (this._renderPending) return;
+          this._renderPending = true;
+          requestAnimationFrame(() => {
+            this._renderPending = false;
+            this.render();
+          });
+        }
+
         connectedCallback() {
           if (config.shadow && !this.shadowRoot) {
-            this.attachShadow({
-              mode: "open"
-            });
+            this.attachShadow({ mode: "open" });
           }
 
           if (config.useStore) {
@@ -150,11 +191,6 @@ const Drow = {
 
           if (typeof this.init === "function") {
             this.init(config);
-          }
-          if (config.append !== undefined && config.append !== "") {
-            document
-              .querySelector("head")
-              .replaceChild(this, document.querySelector("head"));
           }
         }
 
@@ -173,15 +209,14 @@ const Drow = {
         render() {
           if (!config.template) return;
 
-          // 1. Prepare Merged Context (State + Computed + Props)
-          // Extract plain values from Proxy state for the rendering context
+          // 1. Build merged context (state + computed + store + props)
           const context = {};
           if (this.state) {
-             Object.keys(this.state).forEach(key => {
-                context[key] = this.state[key];
-             });
+            Object.keys(this.state).forEach(key => {
+              context[key] = this.state[key];
+            });
           }
-          
+
           if (config.useStore) {
             context.store = Drow.store.state;
           }
@@ -198,25 +233,21 @@ const Drow = {
             });
           }
 
-          // 2. Efficient Interpolation
+          // 2. Interpolation
           let template = config.template.replace(/{{([\s\S]*?)}}/g, (match, key) => {
             const cleanKey = key.trim();
-            
-            // Support nested property access (e.g., {{store.globalCount}})
             const value = cleanKey.split('.').reduce((acc, part) => {
-                return acc && acc[part] !== undefined ? acc[part] : undefined;
+              return acc && acc[part] !== undefined ? acc[part] : undefined;
             }, context);
 
             if (value !== undefined) return value;
             if (cleanKey === 'bind') return this._originalContent || "";
 
-            // Only clear the tag if it's a known root property (state, store, etc.)
-            // This prevents wiping out d-for iterator variables like {{img.id}}
             const rootKey = cleanKey.split('.')[0];
             return (rootKey in context) ? "" : match;
           });
 
-          // 3. Handle Slotting/Shadow DOM specifics
+          // 3. Slotting / Shadow DOM
           if (config.shadow) {
             template = template.replace("<slot></slot>", "{{bind}}").replace("{{bind}}", "<slot></slot>");
           } else {
@@ -235,7 +266,6 @@ const Drow = {
                   userElements.forEach(el => frag.appendChild(el));
                   slot.replaceWith(frag);
                 } else {
-                  // Unwrap fallback content
                   const frag = document.createDocumentFragment();
                   while (slot.firstChild) frag.appendChild(slot.firstChild);
                   slot.replaceWith(frag);
@@ -245,15 +275,14 @@ const Drow = {
               const defaultSlot = content.querySelector('slot:not([name])');
               if (defaultSlot) {
                 const frag = document.createDocumentFragment();
-                while (userContentDiv.firstChild) {
-                  frag.appendChild(userContentDiv.firstChild);
-                }
+                while (userContentDiv.firstChild) frag.appendChild(userContentDiv.firstChild);
                 defaultSlot.replaceWith(frag);
               }
               template = tempTemplate.innerHTML;
             }
           }
 
+          // 4. CSS scoping
           let css = '';
           if (config.css) {
             if (config.shadow) {
@@ -266,25 +295,25 @@ const Drow = {
 
           const content = `<drow-wrapper>${css}${template}</drow-wrapper>`;
 
-          // 5. Capture Focus state
+          // 5. Capture focus state
           const root = this.shadowRoot || document;
           let activeEl = root.activeElement;
           if (!this.shadowRoot && (!activeEl || !this.contains(activeEl))) activeEl = null;
-          
+
           let focusKey = null;
           let selection = { start: 0, end: 0 };
 
           if (activeEl) {
-             focusKey = activeEl.getAttribute('ref') || activeEl.getAttribute('d-ref') || activeEl.getAttribute('d-model');
-             if (focusKey && (activeEl.type === 'text' || activeEl.tagName === 'TEXTAREA')) {
-                 selection.start = activeEl.selectionStart;
-                 selection.end = activeEl.selectionEnd;
-             }
+            focusKey = activeEl.getAttribute('ref') || activeEl.getAttribute('d-ref') || activeEl.getAttribute('d-model');
+            if (focusKey && (activeEl.type === 'text' || activeEl.tagName === 'TEXTAREA')) {
+              selection.start = activeEl.selectionStart;
+              selection.end = activeEl.selectionEnd;
+            }
           }
 
-          // 6. Targeted DOM Update
+          // 6. DOM update
           (this.shadowRoot || this).innerHTML = content;
-          
+
           this.processDirectives(context);
           this.applyEvents();
           this.emit = (name, detail) => {
@@ -295,113 +324,216 @@ const Drow = {
             }));
           };
 
+          // 7. Restore focus
           if (focusKey && this.refs[focusKey]) {
-              const el = this.refs[focusKey];
-              el.focus();
-              if (el.setSelectionRange && (el.type === 'text' || el.tagName === 'TEXTAREA')) {
-                  el.setSelectionRange(selection.start, selection.end);
-              }
-          }
-        }
-
-        /**
-         * Updates the template with the props provided to the Drow Component.
-         * Variables are replaced in the template Ex: {{variable_name}} 
-         * {{bind}} is used as an internal reference so that elements can exist within a Drow Component instead of being removed
-         * @instance
-         * @example
-         * updateVars(config) -- used internally
-         */
-        updateVars(config) {
-          let newConfig = config;
-          for (let i = 0; i < this.getAttributeNames().length; i++) {
-            let thisAttr = this.getAttributeNames()[i];
-            let thisAttrValue = this.getAttribute(thisAttr);
-            if (thisAttr != 'bind') {
-              newConfig.template = newConfig.template.replaceAll("{{" + thisAttr + "}}", thisAttrValue);
+            const el = this.refs[focusKey];
+            el.focus();
+            if (el.setSelectionRange && (el.type === 'text' || el.tagName === 'TEXTAREA')) {
+              el.setSelectionRange(selection.start, selection.end);
             }
           }
 
-          return newConfig;
+          // 8. updated() lifecycle hook
+          if (config.updated && typeof config.updated === 'function') {
+            config.updated.call(this);
+          }
         }
 
         /**
-         * Process directives like d-if and d-show.
+         * Process directives: d-for, d-if, d-else, d-else-if, d-show, d-class, d-bind, d-html, d-cloak.
          */
         processDirectives(context) {
           const root = this.shadowRoot || this;
-          
-          // Helper to resolve nested paths (e.g. "user.avatar" or "store.url")
+
           const getValue = (key) => {
             return key.split('.').reduce((acc, part) => {
               return acc && acc[part] !== undefined ? acc[part] : undefined;
             }, context);
           };
-          
-          // d-for (List Rendering)
+
+          // --- d-for (List Rendering with optional index and d-key diffing) ---
           root.querySelectorAll('[d-for]').forEach(el => {
             const expr = el.getAttribute('d-for');
-            const [iterVar, listName] = expr.split(' in ').map(s => s.trim());
+            // Support: "item in list" or "(item, index) in list"
+            const parenMatch = expr.match(/^\(\s*(\w+)\s*,\s*(\w+)\s*\)\s+in\s+(\S+)$/);
+            const simpleMatch = expr.match(/^(\w+)\s+in\s+(\S+)$/);
+
+            let iterVar, indexVar, listName;
+            if (parenMatch) {
+              [, iterVar, indexVar, listName] = parenMatch;
+            } else if (simpleMatch) {
+              [, iterVar, listName] = simpleMatch;
+              indexVar = null;
+            } else {
+              return;
+            }
+
             const list = getValue(listName);
-            
-            if (Array.isArray(list)) {
-              const parent = el.parentNode;
-              list.forEach(item => {
+            if (!Array.isArray(list)) return;
+
+            const parent = el.parentNode;
+            const keyAttr = el.getAttribute('d-key');
+
+            const replaceTag = (html, tag, value) => {
+              html = html.replaceAll(tag, value);
+              const encodedTag = tag.replaceAll('{{', '%7B%7B').replaceAll('}}', '%7D%7D');
+              return html.replaceAll(encodedTag, value);
+            };
+
+            if (keyAttr) {
+              // Keyed diffing: build map of existing DOM nodes by key
+              const existingNodes = {};
+              let node = el.previousSibling;
+              while (node) {
+                const prev = node.previousSibling;
+                if (node._drowKey !== undefined) {
+                  existingNodes[node._drowKey] = node;
+                }
+                node = prev;
+              }
+
+              const newKeys = [];
+              list.forEach((item, idx) => {
+                const keyExpr = keyAttr.replace(/{{([\s\S]*?)}}/g, (_, k) => {
+                  const kTrim = k.trim();
+                  if (typeof item === 'object' && kTrim.startsWith(iterVar + '.')) {
+                    return item[kTrim.slice(iterVar.length + 1)] ?? '';
+                  }
+                  if (kTrim === iterVar) return item;
+                  if (indexVar && kTrim === indexVar) return idx;
+                  return '';
+                });
+
+                newKeys.push(keyExpr);
+
+                if (existingNodes[keyExpr]) {
+                  // Node already exists — move into position before el
+                  parent.insertBefore(existingNodes[keyExpr], el);
+                } else {
+                  // New node
+                  const clone = el.cloneNode(true);
+                  clone.removeAttribute('d-for');
+                  clone.removeAttribute('d-key');
+                  let html = clone.outerHTML;
+
+                  if (typeof item === 'object') {
+                    Object.keys(item).forEach(k => {
+                      html = replaceTag(html, `{{${iterVar}.${k}}}`, item[k]);
+                    });
+                  } else {
+                    html = replaceTag(html, `{{${iterVar}}}`, item);
+                  }
+                  if (indexVar) html = replaceTag(html, `{{${indexVar}}}`, idx);
+
+                  const temp = document.createElement('template');
+                  temp.innerHTML = html;
+                  const newNode = temp.content.firstElementChild;
+                  if (newNode) {
+                    newNode._drowKey = keyExpr;
+                    parent.insertBefore(newNode, el);
+                  }
+                }
+              });
+
+              // Remove stale nodes
+              Object.keys(existingNodes).forEach(k => {
+                if (!newKeys.includes(k)) existingNodes[k].remove();
+              });
+
+            } else {
+              // No key — simple clone-and-insert
+              list.forEach((item, idx) => {
                 const clone = el.cloneNode(true);
                 clone.removeAttribute('d-for');
                 let html = clone.outerHTML;
-                
-                const replaceTag = (tag, value) => {
-                  html = html.replaceAll(tag, value);
-                  // Handle browser URL encoding in attributes (e.g. src or href)
-                  const encodedTag = tag.replaceAll('{{', '%7B%7B').replaceAll('}}', '%7D%7D');
-                  html = html.replaceAll(encodedTag, value);
-                };
 
                 if (typeof item === 'object') {
-                   Object.keys(item).forEach(key => {
-                       replaceTag(`{{${iterVar}.${key}}}`, item[key]);
-                   });
+                  Object.keys(item).forEach(k => {
+                    html = replaceTag(html, `{{${iterVar}.${k}}}`, item[k]);
+                  });
                 } else {
-                   replaceTag(`{{${iterVar}}}`, item);
+                  html = replaceTag(html, `{{${iterVar}}}`, item);
                 }
-                
+                if (indexVar) html = replaceTag(html, `{{${indexVar}}}`, idx);
+
                 el.insertAdjacentHTML('beforebegin', html);
               });
-              el.remove();
             }
+
+            el.remove();
           });
 
-          // d-if (Conditional Rendering)
+          // --- d-if / d-else-if / d-else chaining ---
           root.querySelectorAll('[d-if]').forEach(el => {
             const key = el.getAttribute('d-if');
             const isNegated = key.startsWith('!');
             const stateKey = isNegated ? key.substring(1) : key;
             const value = getValue(stateKey);
-            
-            if (isNegated ? value : !value) {
+            const conditionMet = isNegated ? !value : !!value;
+
+            if (!conditionMet) {
+              // Walk siblings for d-else-if / d-else
+              let sibling = el.nextElementSibling;
+              let handled = false;
+              while (sibling) {
+                const next = sibling.nextElementSibling;
+                if (sibling.hasAttribute('d-else-if')) {
+                  if (!handled) {
+                    const eKey = sibling.getAttribute('d-else-if');
+                    const eNeg = eKey.startsWith('!');
+                    const eSK = eNeg ? eKey.substring(1) : eKey;
+                    const eVal = getValue(eSK);
+                    const eMet = eNeg ? !eVal : !!eVal;
+                    if (eMet) {
+                      sibling.removeAttribute('d-else-if');
+                      handled = true;
+                    } else {
+                      sibling.remove();
+                    }
+                  } else {
+                    sibling.remove();
+                  }
+                } else if (sibling.hasAttribute('d-else')) {
+                  if (!handled) {
+                    sibling.removeAttribute('d-else');
+                  } else {
+                    sibling.remove();
+                  }
+                  break;
+                } else {
+                  break;
+                }
+                sibling = next;
+              }
               el.remove();
             } else {
               el.removeAttribute('d-if');
+              // Remove any trailing d-else-if / d-else siblings
+              let sibling = el.nextElementSibling;
+              while (sibling) {
+                const next = sibling.nextElementSibling;
+                if (sibling.hasAttribute('d-else-if') || sibling.hasAttribute('d-else')) {
+                  sibling.remove();
+                  sibling = next;
+                } else {
+                  break;
+                }
+              }
             }
           });
 
-          // d-show (Toggles Display)
+          // --- d-show ---
           root.querySelectorAll('[d-show]').forEach(el => {
             const key = el.getAttribute('d-show');
             const isNegated = key.startsWith('!');
             const stateKey = isNegated ? key.substring(1) : key;
             const value = getValue(stateKey);
 
-            if (isNegated ? value : !value) {
-              el.style.display = 'none';
-            } else {
-              el.style.display = '';
-            }
+            el.style.display = (isNegated ? value : !value) ? 'none' : '';
             el.removeAttribute('d-show');
           });
 
-          // d-class:name (Conditional Class)
+          // --- d-class:name ---
           root.querySelectorAll('*').forEach(el => {
             Array.from(el.attributes).forEach(attr => {
               if (attr.name.startsWith('d-class:')) {
@@ -421,14 +553,14 @@ const Drow = {
             });
           });
 
-          // d-bind (Attribute Binding)
+          // --- d-bind ---
           root.querySelectorAll('*').forEach(el => {
             Array.from(el.attributes).forEach(attr => {
               if (attr.name.startsWith('d-bind:')) {
                 const realAttr = attr.name.substring(7);
                 const stateKey = attr.value;
                 const value = getValue(stateKey);
-                
+
                 if (value !== undefined && value !== null) {
                   el.setAttribute(realAttr, value);
                 }
@@ -437,36 +569,33 @@ const Drow = {
             });
           });
 
-          // d-html (Raw HTML)
+          // --- d-html (raw HTML injection — sanitize in production!) ---
           root.querySelectorAll('[d-html]').forEach(el => {
-             const key = el.getAttribute('d-html');
-             const value = getValue(key);
-             if (value !== undefined) {
-               el.innerHTML = value;
-             }
-             el.removeAttribute('d-html');
+            const key = el.getAttribute('d-html');
+            const value = getValue(key);
+            if (value !== undefined) {
+              el.innerHTML = value;
+            }
+            el.removeAttribute('d-html');
           });
 
-          // d-cloak (Removes cloak attribute once component is rendered)
-          if (this.hasAttribute('d-cloak')) {
-            this.removeAttribute('d-cloak');
-          }
-          root.querySelectorAll('[d-cloak]').forEach(el => {
-            el.removeAttribute('d-cloak');
-          });
+          // --- d-cloak ---
+          if (this.hasAttribute('d-cloak')) this.removeAttribute('d-cloak');
+          root.querySelectorAll('[d-cloak]').forEach(el => el.removeAttribute('d-cloak'));
         }
 
         /**
-         * Binds event listeners based on @event syntax in the template.
-         * Example: <button @click="handleClick">
+         * Binds event listeners (@event syntax) and handles d-model two-way binding.
+         * d-model supports nested paths: d-model="user.name"
          */
         applyEvents() {
           const root = this.shadowRoot || this;
           this.refs = {};
-          const elements = root.querySelectorAll('*');
-          elements.forEach(el => {
+
+          root.querySelectorAll('*').forEach(el => {
             Array.from(el.attributes).forEach(attr => {
-              // Event Binding (@click)
+
+              // Event binding: @click, @click.prevent, @click.stop
               if (attr.name.startsWith('@')) {
                 let eventName = attr.name.substring(1);
                 let modifiers = [];
@@ -486,81 +615,85 @@ const Drow = {
                   el.removeAttribute(attr.name);
                 }
               }
-              // Refs (ref="myInput" or d-ref="myInput")
-              if (attr.name === 'ref' || attr.name === 'd-ref') {
-                  this.refs[attr.value] = el;
-              }
-              // Two-Way Binding (d-model="stateKey")
-              if (attr.name === 'd-model') {
-                  const key = attr.value;
-                  // Store ref for focus restoration if explicit ref is missing
-                  if (!el.hasAttribute('ref') && !el.hasAttribute('d-ref')) {
-                      this.refs[key] = el;
-                  }
-                  
-                  const valueProp = (el.type === 'checkbox') ? 'checked' : 'value';
-                  const eventType = (el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input';
 
-                  if (this.state[key] !== undefined) {
-                      el[valueProp] = this.state[key];
+              // Refs
+              if (attr.name === 'ref' || attr.name === 'd-ref') {
+                this.refs[attr.value] = el;
+              }
+
+              // d-model with deep path support (e.g. d-model="user.name")
+              if (attr.name === 'd-model') {
+                const path = attr.value.split('.');
+                if (!el.hasAttribute('ref') && !el.hasAttribute('d-ref')) {
+                  this.refs[attr.value] = el;
+                }
+
+                const valueProp = (el.type === 'checkbox') ? 'checked' : 'value';
+                const eventType = (el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input';
+
+                // Read current value via deep path
+                const currentVal = path.reduce((acc, k) => acc && acc[k] !== undefined ? acc[k] : undefined, this.state);
+                if (currentVal !== undefined) el[valueProp] = currentVal;
+
+                el.addEventListener(eventType, (e) => {
+                  // Write via deep path
+                  const newVal = e.target[valueProp];
+                  if (path.length === 1) {
+                    this.state[path[0]] = newVal;
+                  } else {
+                    // Navigate to the parent object and set the leaf key
+                    const parent = path.slice(0, -1).reduce((acc, k) => acc[k], this.state);
+                    parent[path[path.length - 1]] = newVal;
                   }
-                  el.addEventListener(eventType, (e) => {
-                      this.state[key] = e.target[valueProp];
-                  });
+                });
               }
             });
           });
         }
 
         /**
-         * Gets the Wrapper Element of a Drow Component.
-         * @instance
-         * @example
-         * this.getWrap().querySelector("b");
+         * Gets the wrapper element of a Drow Component.
          */
         getWrap() {
           return (this.shadowRoot || this).querySelector("drow-wrapper");
         }
 
         /**
-         * Gets a Property of a Drow Component.
-         * @property {string} propName - returns of Property used in Componenet.
-         * @returns {string} Property
-         * @instance
-         * @example
-         * this.getProp('prop1');
+         * Gets a prop attribute value.
+         * @param {string} propName
+         * @returns {string}
          */
         getProp(propName) {
           return this.getAttribute(propName);
         }
 
         /**
-         * Gets the Drow Component.
-         * @returns Drow Component
-         * @instance
-         * @example
-         * this.getComp();
+         * Returns the component element itself.
+         * @returns {HTMLElement}
          */
         getComp() {
           return this;
         }
 
-        // Respond to attribute changes.
+        /**
+         * Responds to observed attribute changes.
+         */
         attributeChangedCallback(attr, oldValue, newValue) {
-          var attribute = {
+          const attribute = {
             name: attr,
-            oldValue: oldValue,
-            newValue: newValue,
+            oldValue,
+            newValue,
             comp: this.getComp()
           };
-          this.render();
-          try {
-            config.watch(attribute);
-          } catch (e) {}
+          this._scheduleRender();
+          if (config.watch && typeof config.watch === 'function') {
+            config.watch.call(this, attribute);
+          }
         }
       }
     );
-    console.log(`Drow ${config.name} Registered`);
+
+    if (Drow.debug) console.log(`Drow ${config.name} Registered`);
     return this;
   }
 };
