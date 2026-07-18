@@ -524,12 +524,22 @@
             <div class="feature-card">
                 <div class="feature-icon">🧩</div>
                 <h3>Object-First API</h3>
-                <p>No classes or complex lifecycles. A single 'init' hook handles setup, replacing native boilerplate.</p>
+                <p>No classes or complex lifecycles. A single config object handles everything.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">⚛️</div>
                 <h3>Reactive State</h3>
                 <p>Proxy-based reactivity automatically updates the DOM when your state changes. No manual re-renders.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔁</div>
+                <h3>Batched Rendering</h3>
+                <p>Multiple state mutations in the same frame are coalesced into a single DOM update via <code>requestAnimationFrame</code>.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔑</div>
+                <h3>Keyed List Diffing</h3>
+                <p>Add <code>d-key</code> to a <code>d-for</code> loop and Drow patches only the changed items — no full list rebuild.</p>
             </div>
         </section>
 
@@ -605,7 +615,18 @@ Drow.register(config);</code></div>
             <div class="demo-container">
                 <image-gallery></image-gallery>
                 <div style="margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
-                    This gallery iterates over an array of objects using <code>d-for="img in images"</code>.
+                    Iterates over objects with <code>d-for="(img, index) in images"</code> and uses <code>d-key="{{img.id}}"</code> for efficient keyed diffing.
+                </div>
+            </div>
+        </section>
+
+        <!-- Conditional Rendering Demo -->
+        <section class="demo-section" style="border-top: 1px solid var(--border-color);">
+            <h2>Conditional Rendering</h2>
+            <div class="demo-container">
+                <status-panel></status-panel>
+                <div style="margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
+                    Uses <code>d-if</code> / <code>d-else-if</code> / <code>d-else</code> chaining to show different states.
                 </div>
             </div>
         </section>
@@ -619,15 +640,16 @@ Drow.register(config);</code></div>
                     <ul>
                         <li>Zero dependencies</li>
                         <li>Simple object syntax</li>
-                        <li>Built-in templating</li>
+                        <li>Built-in templating &amp; directives</li>
                         <li>Tiny bundle size</li>
                         <li>No build step needed</li>
                         <li>Proxy-based reactivity</li>
+                        <li>Batched rendering</li>
+                        <li>Keyed list diffing</li>
                         <li>Scoped CSS in JS</li>
-                        <li>Simplified lifecycle</li>
+                        <li>Simplified lifecycle hooks</li>
                         <li>Native web standards</li>
-                        <li>Perfect for beginners</li>
-                        <li>Great for experienced devs</li>
+                        <li>TypeScript definitions included</li>
                     </ul>
                 </div>
                 <div class="comparison-box other-box">
@@ -768,7 +790,7 @@ Drow.register(config);</code></div>
             `
         });
 
-        // Gallery Demo Component
+        // Gallery Demo Component (uses d-key and index)
         Drow.register({
             name: "image-gallery",
             state: {
@@ -778,12 +800,21 @@ Drow.register(config);</code></div>
                     { id: 1016, title: "Canyon" }
                 ]
             },
+            methods: {
+                shuffle() {
+                    this.state.images = [...this.state.images].sort(() => Math.random() - 0.5);
+                }
+            },
             template: `
-                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                    <div d-for="img in images" style="background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <img src="https://picsum.photos/id/{{img.id}}/150/100" alt="{{img.title}}" style="border-radius: 4px; display: block; margin-bottom: 8px;">
-                        <span style="font-size: 12px; color: var(--accent-gold);">{{img.title}}</span>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <div d-for="(img, index) in images" d-key="{{img.id}}" style="background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <img src="https://picsum.photos/id/{{img.id}}/150/100" alt="{{img.title}}" style="border-radius: 4px; display: block; margin-bottom: 8px;">
+                            <span style="font-size: 11px; color: var(--text-secondary);">#{{index}}</span>
+                            <span style="font-size: 12px; color: var(--accent-gold); margin-left: 6px;">{{img.title}}</span>
+                        </div>
                     </div>
+                    <button @click="shuffle" class="demo-button" style="font-size: 14px; padding: 8px 20px;">Shuffle</button>
                 </div>
             `,
             css: `
@@ -792,6 +823,34 @@ Drow.register(config);</code></div>
                     transform: scale(1.05);
                     transition: all 0.2s ease;
                 }
+            `
+        });
+
+        // Conditional Rendering Demo (d-if / d-else-if / d-else)
+        Drow.register({
+            name: "status-panel",
+            state: { status: "idle" },
+            methods: {
+                setIdle()    { this.state.status = "idle"; },
+                setLoading() { this.state.status = "loading"; },
+                setSuccess() { this.state.status = "success"; },
+                setError()   { this.state.status = "error"; }
+            },
+            template: `
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                    <div style="min-height: 48px; display: flex; align-items: center; justify-content: center;">
+                        <p d-if="status === 'loading'" style="color: var(--accent-gold); font-size: 18px;">⏳ Loading…</p>
+                        <p d-else-if="status === 'success'" style="color: #4ade80; font-size: 18px;">✅ Success!</p>
+                        <p d-else-if="status === 'error'" style="color: #ef4444; font-size: 18px;">❌ Something went wrong.</p>
+                        <p d-else style="color: var(--text-secondary); font-size: 18px;">⚪ Idle — pick a state below.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                        <button @click="setIdle"    class="demo-button" style="font-size: 13px; padding: 6px 14px; background: #475569;">Idle</button>
+                        <button @click="setLoading" class="demo-button" style="font-size: 13px; padding: 6px 14px; background: #92400e;">Loading</button>
+                        <button @click="setSuccess" class="demo-button" style="font-size: 13px; padding: 6px 14px; background: #166534;">Success</button>
+                        <button @click="setError"   class="demo-button" style="font-size: 13px; padding: 6px 14px; background: #7f1d1d;">Error</button>
+                    </div>
+                </div>
             `
         });
     </script>
