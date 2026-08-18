@@ -1,6 +1,6 @@
 {
   "name": "drowjs",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "The Tiny, Object-Based Web Component Library.",
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "http-server": "^14.1.0",
-    "jsdoc": "^3.6.4",
+    "jsdoc": "^4.0.5",
     "terser": "^5.46.2",
     "typescript": "^6.0.3"
   }
